@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>axios 发送 ajax请求</title>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+  <button>GET</button>
+  <button>POST</button>
+  <button>AJAX</button>
+
+  <script>
+    const btns = document.querySelectorAll('button')
+
+    // 配置baseURL
+    axios.defaults.baseURL = 'http://127.0.0.1:8000'
+
+    btns[0].onclick = function() {
+      // GET请求
+      axios.get('/axios-server', {
+        //url参数
+        params: {
+          id: 100,
+          vip: 7
+        },
+        // 请求头信息
+        headers: {
+          name: 'Reus',
+          age: 33
+        }
+      }).then(value => {
+        console.log(value);
+      });
+      }
+
+    btns[1].onclick = function() {
+      axios.post('/axios-server',{
+          username: 'admin', 
+          password: 'admin'
+        },{
+        params: {
+          id: 300,
+          vip: 10
+        },
+        headers: {
+          height: 181,
+          weight: 140
+        }
+      })
+    }
+
+    btns[2].onclick = function() {
+      axios({
+        // 请求方法
+        method: 'POST',
+        url: '/axios-server',
+        params: {
+          vip: 0,
+          levei: 1
+        },
+        headers: {
+          a: 100,
+          b: 200
+        },
+        // 请求体参数
+        data: {
+          username: 'admin',
+          password: 'admin'
+        }
+      })
+    }
+    
+  </script>
+</body>
+</html>

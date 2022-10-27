@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    #result {
+      width: 200px;
+      height: 100px;
+      border: solid 1px #89b;
+    }
+  </style>
+</head>
+<body>
+  <div id="result"></div>
+  <script>
+    window.onkeydown = function() {
+      const xhr = new XMLHttpRequest()
+      // (自动转换) 设置响应体数据的类型(自动转换)
+      xhr.responseType = 'json'
+      xhr.open('GET', 'http://127.0.0.1:8000/json-server')
+      xhr.send()
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          if (xhr.status >= 200 && xhr.status < 400) {
+            // 手动转化数据
+            // let data = JSON.parse(xhr.response)
+            // console.log(data);
+            // result.innerHTML = data.name 
+
+            // 自动转换
+            result.innerHTML = xhr.response.name
+          }
+        }
+      }
+    }
+  </script>
+</body>
+</html>

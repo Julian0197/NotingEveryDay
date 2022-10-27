@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <div>
+    <button onclick="testGet()">GET请求</button>
+    <button onclick="testPost()">POST请求</button>
+    <button onclick="testPut()">PUT请求</button>
+    <button onclick="testDelete()">DELETE请求</button>
+  </div>
+
+  <script src="https://cdn.bootcdn.net/ajax/libs/axios/0.21.1/axios.js"></script>  
+
+  <script>
+    function testGet() {
+      // axios.get('http://localhost:3000/posts') 
+      // axios.get('http://localhost:3000/posts/1')
+      axios.get('http://localhost:3000/posts?id=1')
+        .then(response => {
+          console.log('/posts get', response.data);
+        })
+    }
+
+    function testPost() { // 添加数据
+      axios.post('http://localhost:3000/posts', {"title": "json-server3", "author": "typicode" })
+      .then(response => {
+        console.log('/posts put', response.data)
+      })
+    }
+
+    function testPut() { // 更新数据
+      axios.put('http://localhost:3000/posts/3', {"title": "json-server_put", "author": "typicode" })
+      .then(response => {
+        console.log('/posts post', response.data)
+      })
+    }
+
+    function testDelete() { // 删除数据
+      axios.delete('http://localhost:3000/posts/3')
+      .then(response => {
+        console.log('/posts delete', response.data)
+      })
+    }
+  </script>
+</body>
+</html>
