@@ -323,7 +323,7 @@ console.log(Object.keys(person));   // ['name', 'age']
 + 遍历获得的是对象的**键值**
 
 ~~~js
-// 1. 不会遍历到对象属性及其原型属性,遍历得到的是键值
+// 1. 不会遍历到原型属性,遍历得到的是键值
 Array.prototype.getLength = function() {
     return this.length;
 };

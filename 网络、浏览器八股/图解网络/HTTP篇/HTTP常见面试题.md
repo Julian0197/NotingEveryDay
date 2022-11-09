@@ -156,7 +156,58 @@ Content-Encoding: gzip
 Accept-Encoding: gzip, deflate
 ```
 
-### GET 与 POST
+#### HTTP常见请求头
+
+**1.Accept**
+
++ Accept:text/html 浏览器可以接受服务器返回的类型为 text/html
++ Accept: */* 代表浏览器可以处理所有类型（一般浏览器给服务器都是发这个）
+
+**2.Accept-Encoding**
+
++ Accept-Encoding：gzip，deflate 浏览器声明自己接受的编码方式，通常指定压缩方法，是否支持压缩，支持什么压缩方法
+
+**3.Accept-Language**
+
+浏览器声明自己接受的语言
+
+**4.Connection**
+
++ Connection：keep-alive 当一个网页打开完成后，客户端和服务端之间用于传输HTTP报文的TCP连接不会中断，如果客户端再次访问这个服务器的网页，客户端和服务端会继续使用这条已经建立的连接（HTTP/1.1 默认开启）
++ Connection：close 一个request完成后，TCP连接关闭，下次传输需要重新建立TCP连接（三次握手）
+
+**5.Host（发送请求时，该报头域是必须的）**
+
++ Host：www.baidu.com 请求报头域用于指定请求资源的Internet主机号和端口号，通常从HTTP的URL中提取出来
+
+**6.Referer**
+
++ **Referer:https://www.baidu.com/?tn=62095104_8_oem_dg** 当浏览器向web服务器发送请求的时候，一般会带上Referer，告诉服务器我是从哪个页面链接过来的，服务器籍此可以获得一些信息用于处理。
+
+**7.User-Agent**
+
++ User-Agent:Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36 告诉HTTP服务器， 客户端使用的操作系统和浏览器的名称和版本。
+
+**8.Cache-Control**
+
++ **Cache-Control:private** 默认为private 响应只能够作为私有的缓存，不能再用户间共享
++ **Cache-Control:public**响应会被缓存，并且在多用户间共享。正常情况, 如果要求HTTP认证,响应会自动设置为 private.
++ **Cache-Control:must-revalidate** 响应在特定条件下会被重用，以满足接下来的请求，但是它必须到服务器端去验证它是不是仍然是最新的。
++ **Cache-Control:no-cache** 响应不会被缓存,而是实时向服务器端请求资源。
++ **Cache-Control:max-age=10** 设置缓存最大的有效时间，但是这个参数定义的是时间大小（比如：60）而不是确定的时间点。单位是[秒 seconds]。
++ **Cache-Control:no-store **在任何条件下，响应都不会被缓存，并且不会被写入到客户端的磁盘里，这也是基于安全考虑的某些敏感的响应才会使用这个。
+
+**9.Cookie**
+
+用来存储一些用户信息，让服务器辨别用户身份，比如Cookie会存储一些用户的用户名和密码，用户登录后客户端会产生一个Cookie存储，浏览器再通过读取Cookie信息去服务器验证。
+
+**9.Range（用于断点续传）**
+
++ **Range:bytes=0-5** 指定第一个字节的位置和最后一个字节的位置。用于告诉服务器自己想取对象的哪部分。
+
+### 常见请求方法
+
+#### localStorage、sessionStorage、cookie几种web存储方式区分
 
 #### GET 和 POST有什么区别
 
@@ -185,6 +236,10 @@ Accept-Encoding: gzip, deflate
 
 - 可以用 GET 方法实现新增或删除数据的请求，这样实现的 GET 方法自然就不是安全和幂等。
 - 可以用 POST 方法实现查询数据的请求，这样实现的 POST 方法自然就是安全和幂等。
+
+#### put请求
+
+
 
 ### HTTP缓存技术
 
@@ -471,7 +526,7 @@ TLS 记录协议主要负责消息（HTTP 数据）的压缩，加密及数据�
 
 记录协议完成后，最终的报文数据将传递到传输控制协议 (TCP) 层进行传输。
 
-### HTTPS一定安全可靠么
+#### HTTPS一定安全可靠么
 
 这个问题的场景是这样的：客户端通过浏览器向服务端发起 HTTPS 请求时，被「假基站」转发到了一个「中间人服务器」，于是客户端是和「中间人服务器」完成了 TLS 握手，然后这个「中间人服务器」再与真正的服务端完成 TLS 握手。
 
@@ -532,4 +587,24 @@ TLS 记录协议主要负责消息（HTTP 数据）的压缩，加密及数据�
 ![img](https://cdn.xiaolincoding.com/gh/xiaolincoder/network/http/%E5%8F%8C%E5%90%91%E8%AE%A4%E8%AF%81.png)
 
 如果用了双向认证方式，不仅客户端会验证服务端的身份，而且服务端也会验证客户端的身份。服务端一旦验证到请求自己的客户端为不可信任的，服务端就拒绝继续通信，客户端如果发现服务端为不可信任的，那么也中止通信。
+
+### HTTP/1.1 HTTP/2 HTTP/3 演化
+
+#### HTTP/1.1 相比 HTTP/1.0 提高了什么性能？
+
+**性能上：**
+
++ 使用长连接的方式改善了HTTP/1.0 短连接造成的性能开销
+  + 短连接，每发一次请求都要进行TCP三次握手
++ 支持管道网络传输，只要第一个请求发送出去，不必等其回来，就可以发送第二个请求，可以减少整体的等待时间
+
+**HTTP/1.1 性能瓶颈：**
+
++ 请求/响应头部 未经压缩就发送，首部信息越多，延迟越大。只能压缩Body部分
++ 每次发送相同的首部浪费资源
++ 服务器按照请求的顺序响应，如果服务器响应慢，客户端一直受不到请求，也就是队头阻塞
++ 没有请求优先控制
++ 请求只能从客户端开始，服务器只能被动响应
+
+
 
