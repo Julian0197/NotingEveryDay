@@ -47,7 +47,7 @@
 + 证书有效期
 + 其他信息
 
-![img](https://cdn.xiaolincoding.com/gh/xiaolincoder/ImageHost4@main/%E7%BD%91%E7%BB%9C/https/%E8%AF%81%E4%B9%A6%E7%9A%84%E6%A0%A1%E9%AA%8C.png)
+<img src="https://cdn.xiaolincoding.com/gh/xiaolincoder/ImageHost4@main/%E7%BD%91%E7%BB%9C/https/%E8%AF%81%E4%B9%A6%E7%9A%84%E6%A0%A1%E9%AA%8C.png" alt="img" style="zoom:50%;" />
 
 + 首先 CA 会把持有者的公钥、用途、颁发者、有效时间等信息打成一个包，再对数字证书用Hash算法计算出Hash值A，哈希值再用CA私钥加密，获得数字签名，数字签名和明文形成一个数字证书，发送给客户端。
 + 客户端先对明文用Hash算法加密，生成Hash值B，再将数字签名用CA公钥解密，比对这两个哈希值，如果一致说明是可信赖的证书

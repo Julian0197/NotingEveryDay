@@ -1,3 +1,56 @@
+## 渲染流程
+
+<img src="C:\Users\MSK\AppData\Roaming\Typora\typora-user-images\image-20221111135023589.png" alt="image-20221111135023589" style="zoom:50%;" />
+
+<img src="C:\Users\MSK\AppData\Roaming\Typora\typora-user-images\image-20221111135126120.png" alt="image-20221111135126120" style="zoom:33%;" />
+
+打印App可以看到，对象中有render这个属性
+
+<img src="C:\Users\MSK\AppData\Roaming\Typora\typora-user-images\image-20221111135501169.png" alt="image-20221111135501169" style="zoom:50%;" />
+
+打印App.render()，得到的是VNode 虚拟dom树
+
+<img src="C:\Users\MSK\AppData\Roaming\Typora\typora-user-images\image-20221111135846031.png" alt="image-20221111135846031" style="zoom:50%;" />
+
+下面模仿一下虚拟节点 转化为 真实节点，也就是mountElement过程
+
+~~~html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="./node_moudles/vue/dist/vue.esm-browser.js"></script>
+  </head>
+  <body>
+    <script>
+      const vnode = {
+        type: "div",
+        props: {
+          id: "app",
+        },
+        children: "hwllo vue3",
+      };
+
+      // 将虚拟节点转化为真实元素 mountElement
+      // type就是根节点，vue3默认是fragment
+      const element = document.createElement(vnode.type);
+      for (const key in vnode.props) {
+        const val = vnode.props[key];
+        element.setAttribute(key, val);
+      }
+      element.textContent = vnode.children;
+      document.body.append(element);
+    </script>
+  </body>
+</html>
+
+~~~
+
+
+
 ## Vue3中h函数常见使用方法
 
 除了使用`<template>`生成html，还可以在js中通过`render`函数生成DOM。
@@ -71,3 +124,40 @@ export default defineComponent({
 </script>
 ~~~
 
+## custom render
+
+vue3 API，可以把vue的开发模型扩展到其他平台（不止浏览器，canvas，ios等）
+
+打印一下vue3 的api  `createRenderer()`
+
+<img src="C:\Users\MSK\AppData\Roaming\Typora\typora-user-images\image-20221111142413482.png" alt="image-20221111142413482" style="zoom: 50%;" />
+
+`createApp`默认把模板渲染到DOM API上
+
+下面自己实现一下自己的render函数
+
+~~~js
+import { createRenderer } from 'vue'
+import App from './App.vue'
+
+
+const renderer = createRenderer({
+  createElement(type) {
+    const element = document.createElement(type);
+    return element;
+  },
+  insert(el, parent) {
+    console.log(el);
+    console.log(parent);
+  },
+});
+
+console.log(renderer)
+renderer.createApp(App).mount(document.querySelector('#app'))
+~~~
+
+这里的type就是根节点
+
+<img src="C:\Users\MSK\AppData\Roaming\Typora\typora-user-images\image-20221111144013253.png" alt="image-20221111144013253" style="zoom:50%;" />
+
+添加元素后，报错，因为缺乏渲染接口`setElementtext`

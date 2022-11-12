@@ -530,3 +530,7 @@ WeakMap 中使用一个**对象作为键**。**引用对象为弱引用，没有
 WeakMap 不支持迭代以及 keys()，values() 和 entries() 方法。所以没有办法获取 WeakMap 的所有键或值。
 
 WeakMap 的主要优点是它们对对象是弱引用，被它们引用的对象很容易地被垃圾收集器移除。但这是以不支持一些对象方法为代价换来的
+
+<img src="C:\Users\MSK\AppData\Roaming\Typora\typora-user-images\image-20221112141836131.png" alt="image-20221112141836131" style="zoom: 33%;" />
+
+<img src="C:\Users\MSK\AppData\Roaming\Typora\typora-user-images\image-20221112141901007.png" alt="image-20221112141901007" style="zoom:35%;" />
