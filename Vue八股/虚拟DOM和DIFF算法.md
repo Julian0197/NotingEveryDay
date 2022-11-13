@@ -161,3 +161,12 @@ renderer.createApp(App).mount(document.querySelector('#app'))
 <img src="C:\Users\MSK\AppData\Roaming\Typora\typora-user-images\image-20221111144013253.png" alt="image-20221111144013253" style="zoom:50%;" />
 
 添加元素后，报错，因为缺乏渲染接口`setElementtext`
+
+~~~js
+  setElementText(node, text) {
+    console.log(node,text);
+    node.append(document.createTextNode(text))
+  }
+~~~
+
+最后能成功完成渲染
