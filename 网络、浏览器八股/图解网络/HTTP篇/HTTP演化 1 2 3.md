@@ -103,7 +103,130 @@ HTTP 协议是基于 **TCP/IP**，并且使用了「**请求 - 应答**」的通
 
 + 请求/响应头部 未经压缩就发送，首部信息越多，延迟越大。只能压缩Body部分
 + 每次发送相同的首部浪费资源
-+ 服务器按照请求的顺序响应，如果服务器响应慢，客户端一直受不到请求，也就是队头阻塞
++ 服务器按照请求的顺序响应，如果服务器响应慢，前面的请求没有完成，后续的请求都在排队等待，也就是队头阻塞
 + 没有请求优先控制
 + 请求只能从客户端开始，服务器只能被动响应
+
+#### HTTP/2做了什么优化？
+
+HTTP/2协议基于HTTPS，在安全上有保障
+
+<img src="https://cdn.xiaolincoding.com/gh/xiaolincoder/ImageHost/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/HTTP/25-HTTP2.png" alt="HTT/1 ~ HTTP/2" style="zoom: 67%;" />
+
+性能上，HTTP/2相比HTTP/1.1：
+
++ 头部压缩
++ 二进制格式
++ 并发传输
++ 服务器主动推送资源
+
+1. **头部压缩**
+
+HTTP/2**压缩头部字段**（Header），如果同时发送多个请求，他们的header相似，协议会**消除重复**的部分。
+
+依靠的是`HPACK`算法：**客户端和服务端同时维护一张头信息表**，所有字段存入表中，生成索引号，以后不用发送相同字段，只要发送索引号，这样可以提高速度。
+
+2. **二进制格式**
+
+HTTP/1.1是**纯文本报文**，而HTTP/2采用了**二进制**格式，头部和数据体都是二进制，统称为帧：**头信息帧**和**数据帧**。
+
+二进制报文，增加了数据传输的效率。比如：状态码200，HTTP/1.1中三个字符采用三个字节单位，而HTTP/2中200的二进制编码是10001000只用了一个字节。
+
+> Header: :status: 200 OK 的编码内容为：`1000 1000`，那么表达的含义是什么呢？
+
+<img src="https://cdn.xiaolincoding.com/gh/xiaolincoder/network/http/index.png" alt="img" style="zoom: 67%;" />
+
++ 最前面的1标识符表示已经是静态表中存在的KV（静态表用于压缩重复的Header字段）
++ 在静态表中，“:status: 200 ok” 静态表编码是 8，二进制即是 1000。
+
+因此，整体加起来是`1000 1000`
+
+3. **并发传输（多路复用）**
+
+在一条连接上，浏览器可以同时发送多个请求，并且响应可以**同时响应**。多路复用中，支持了流的优先级设置，允许客户端告知服务器哪项资源需要**优先传输**。
+
+HTTP/2中的**二进制分帧解决了队头阻塞**的问题。**多个Stream复用一条TCP连接，达到并发的效果。**
+
+<img src="https://cdn.xiaolincoding.com/gh/xiaolincoder/ImageHost4@main/%E7%BD%91%E7%BB%9C/http2/stream.png" alt="img" style="zoom: 67%;" />
+
++ 一个TCP连接包含一个或者多个Stream，Stream是HTTP/2并发的关键技术
++ Stream里可以包含1个或多个Message，Message对应HTTP/1中的请求或响应，由HTTP头部和包体构成
++ Message里面包含一条或者多个Frame，Frame是HTTP/2的最小单位，以二进制格式存放HTTP/1中的内容
+
+结论：多个 Stream 跑在一条 TCP 连接，同一个 HTTP 请求与响应是跑在同一个 Stream 中，HTTP 消息可以由多个 Frame 构成， 一个 Frame 可以由多个 TCP 报文构成。
+
+HTTP2中，**不同Stream的帧可以乱序发送**，因为每个帧的头部会携带 Stream ID 信息，所以接收端可以通过 Stream ID 有序组装成 HTTP 消息，而**同一 Stream 内部的帧必须是严格有序的**。
+
+比如下图，服务端**并行交错地**发送了两个响应： Stream 1 和 Stream 3，这两个 Stream 都是跑在一个 TCP 连接上，客户端收到后，会根据相同的 Stream ID 有序组装成 HTTP 消息。
+
+<img src="https://cdn.xiaolincoding.com/gh/xiaolincoder/network/http/http2%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8.jpeg" alt="img" style="zoom:67%;" />
+
+**3.服务器推送**
+
+HTTP/2改善了传统的请求-应答模式，服务器不再被动响应，可以主动想客户端发送消息。
+
+客户端和服务器**双方都可以建立 Stream**， Stream ID 也是有区别的，客户端建立的 Stream 必须是奇数号，而服务器建立的 Stream 必须是偶数号。
+
+比如下图，Stream 1 是客户端向服务端请求的资源，属于客户端建立的 Stream，所以该 Stream 的 ID 是奇数（数字1）；Stream 2 和 4 都是服务端主动向客户端推送的资源，属于服务端建立的 Stream，所以这两个 Stream 的 ID 是偶数（数字 2 和4）。
+
+<img src="https://img-blog.csdnimg.cn/83445581dafe409d8cfd2c573b2781ac.png" alt="img" style="zoom:67%;" />
+
+再比如，客户端通过 HTTP/1.1 请求从服务器那获取到了 HTML 文件，而 HTML 可能还需要依赖 CSS 来渲染页面，这时客户端还要再发起获取 CSS 文件的请求，需要两次消息往返，如下图左边部分：
+
+<img src="https://cdn.xiaolincoding.com/gh/xiaolincoder/ImageHost4@main/%E7%BD%91%E7%BB%9C/http2/push.png" alt="img" style="zoom:67%;" />
+
+如上图右边部分，在 HTTP/2 中，客户端在访问 HTML 时，服务器可以直接主动推送 CSS 文件，减少了消息传递的次数。
+
+> HTTP/2缺陷？
+
+HTTP2通过Stream的并发能力，解决了队头阻塞问题，但是仍然存在队头阻塞问题，问题出在TCP层。
+
+**HTTP2是基于TCP协议传递数据，TCP是字节流协议，必需保证收到的字节数据是完整且连续的，这样内核才会将缓冲区中的数据返回给HTTP应用，那么当【前一个字节数据】没有到达时，后方的字节数据只能存放在内核缓冲区，只有等到这 1 个字节数据到达时，HTTP/2 应用层才能从内核中拿到数据，这就是 HTTP/2 队头阻塞问题。**
+
+<img src="https://cdn.xiaolincoding.com/gh/xiaolincoder/network/quic/http2%E9%98%BB%E5%A1%9E.jpeg" alt="img" style="zoom:67%;" />
+
+一旦发生了丢包现象，就会触发 TCP 的重传机制，这样在一个 TCP 连接中的**所有的 HTTP 请求都必须等待这个丢了的包被重传回来**。
+
+#### HTTP/3做了哪些优化
+
+HTTP/1.1 和 HTTP/2 都存在队头阻塞问题
+
++ HTTP/1.1 使用管道通信解决了**请求的队头阻塞**，但是**没有解决响应的队头阻塞**，服务端需要按顺序响应收到的请求，如果服务器针对某个请求的消耗时间过长，那么后面的请求只能等待这个请求处理完。
++ HTTP/2 虽然通过**请求复用一个TCP连接**解决了队头阻塞问题，但是一旦发生丢包，就会阻塞所有HTTP请求，这属于TCP层队头阻塞。
+
+HTTP/2 队头阻塞的问题是因为 TCP，所以 **HTTP/3 把 HTTP 下层的 TCP 协议改成了 UDP！**
+
+<img src="https://cdn.xiaolincoding.com/gh/xiaolincoder/ImageHost/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/HTTP/27-HTTP3.png" alt="HTTP/1 ~ HTTP/3" style="zoom:60%;" />
+
+UDP发送不管发送顺序，也不管丢包问题。不会出现像HTTP/2 队头阻塞的问题。UDP是不可靠的传输，但是`基于UDP的QUIC`协议可以实现类似TCP的**可靠性传输**。
+
+**QUIC特点：**
+
++ 无队头阻塞
++ 更快建立连接
++ 连接迁移
+
+1. 无队头阻塞
+
+QUIC协议也有类似HTTP/2 Stream的概念，在同一条连接中可以并发传输多个Stream，Stream可以理解为一条HTTP请求。
+
+但是QUIC协议有一套规则保证传输的可靠性。**当某个流发生丢包时，只会阻塞这个流，其他流不会受到影响，因此不存在队头阻塞问题。**
+
+2. 更快的连接建立
+
+HTTP/1.1 和 HTTP/2 中TCP和TLS是分层的，需要先进行TCP握手，再TLS握手。
+
+HTTP/3 传输数据虽然需要QUIC握手，但是整个握手过程只需要1RTT，目的是为了确认双方的[连接ID]。HTTP/3 的QUIC协议内部包含了TLS/1.3 ，只需1个RTT能同时完成建立连接和秘钥协商。
+
+<img src="C:\Users\MSK\AppData\Roaming\Typora\typora-user-images\image-20221115202115327.png" alt="image-20221115202115327" style="zoom:33%;" />
+
+3. 连接迁移
+
+基于TCP传输协议的HTTP协议，通过四元祖（**源IP、源端口、目的IP、目的端口**）确定一条TCP连接。
+
+当移动设备的网路从4G切换到WIFI时，意味着IP地址发生变化，这个时候就需要断开当前连接，再重新建立连接（TCP三次握手+TLS四次握手）。
+
+而QUIC协议通过连接ID来标记通信的两个端点，当移动网络切换到WIFI，只要仍然保留上下文信息（**连接ID、TLS秘钥等**），就可以无缝重连，消除重连的成本，达到了**连接迁移**目的。
+
+所以， QUIC 是一个在 UDP 之上的**伪** TCP + TLS + HTTP/2 的多路复用的协议。
 
