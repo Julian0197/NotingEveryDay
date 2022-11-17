@@ -2,7 +2,7 @@
 
 ## 1.手写Object.create
 
-**`Object.create()`** 方法用于创建一个新对象，使用现有的对象来作为新创建对象的原型（prototype）。
+**`Object.create()`** 方法用于创建一个新对象，使用现有的对象来作为新创建对象的原型（prototype），也就是说返回的是一个实例。
 
 ~~~js
 function create(obj) {
