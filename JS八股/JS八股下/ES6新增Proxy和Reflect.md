@@ -342,14 +342,14 @@ console.log(obj.age) // 25
 
 #### Reflect常用方法
 
-**get**
+##### **get**
 
 ~~~js
 const obj = { name: '鲨鱼辣椒' }
 console.log(Reflect.get(obj, 'name')) // 鲨鱼辣椒
 ~~~
 
-**set**
+##### **set**
 
 该方法的返回值为`true`或`false`，`true`代表本次操作成功，`false`代表失败；操作成功是指对于那些可写且可配置的属性。要注意的是，当操作失败时，在严格模式下会抛出`TypeError`。
 
@@ -365,7 +365,7 @@ console.log(Reflect.set(obj, 'age', 26)) // false
 console.log(obj.age) // 25
 ~~~
 
-**has**
+##### **has**
 
 检查一个对象中是否包含(继承)某个属性，相当于`in`操作符。
 
@@ -377,7 +377,7 @@ console.log('age' in obj) // true
 console.log(Reflect.has(obj,'age')) // true
 ~~~
 
-**defineProperty**
+##### **defineProperty**
 
 用法基本同`Reflect.set`一致
 
@@ -395,7 +395,7 @@ console.log(Reflect.defineProperty(obj, 'age', {
 console.log(obj.age) // 25
 ~~~
 
-**deleteProperty**
+##### **deleteProperty**
 
 返回一个`布尔值`，代表是否删除成功，删除成功是指对于那些可写且可配置的属性
 
@@ -410,9 +410,9 @@ console.log(Reflect.deleteProperty(obj, 'name')) // true
 console.log(Reflect.deleteProperty(obj, 'age')) // false
 ~~~
 
-**ownKeys**
+##### **ownKeys**
 
-接收一个对象作为参数，并将该对象中`自有属性`、`符号值`、`不可枚举属性`作为数组返回，该数组中的每个成员都是字符串或符号值
+接收一个对象作为参数，并将该对象中`自有属性`、`符号值`、`不可枚举属性`作为**数组**返回（不包括原型链属性），该数组中的每个成员都是字符串或符号值
 
 ~~~js
 const origin = { bigName: 'SYLJ' }
@@ -429,4 +429,103 @@ Object.defineProperty(obj, 'gender', {
 })
 console.log(Reflect.ownKeys(obj)) // ['name', 'gender', Symbol(age)]
 ~~~
+
+**属性排序**
+
+列举对象的键时，顺序根据不同引擎实现方式飘忽不定。`Reflect.ownkeys`列举对象中属性，遵循以下顺序：
+
++ 按照数字上述排序
++ 按照创建顺序列举字符串属性名
++ 按照创建顺序列举符号属性名
+
+~~~js
+const obj = {
+    1: '我的键是整数1',
+    one: '我的键是字符串1',
+    [Symbol.for('s1')]: '我的键是符号值1',
+}
+obj.two = '我的键是字符串2'
+obj[Symbol.for('s2')] = '我的键是符号值2'
+obj[2] = '我的键是整数2'
+
+console.log(Reflect.ownKeys(obj)) // ['1', '2', 'one', 'two', Symbol(s1), Symbol(s2)]
+~~~
+
+~~~js
+const obj = {
+    a: {
+        b: 2,
+		c: {
+            d: 1
+        }
+    },
+    e: 5
+}
+const handler = {
+    get(origin, property, proxy) {
+        return origin[property]
+    },
+    set(origin, property, value, proxy) {
+        console.log(`被修改为${value}`)
+        return origin[property] = value;
+    }
+}
+const proxy = new Proxy(obj, handler);
+proxy.a;
+proxy.e = 555
+proxy.a.c.push('ddd') 
+~~~
+
+### 为什么使用Reflect？
+
+1. **修改某些Object方法的返回结果，让语义更加规范化**
+
+   比如使用Proxy代理对象obj，当通过代理对象修改obj上的不可修改属性时，会抛出`TypeError`阻塞后面的代码，需要使用`try...catch`捕获。而使用`Reflect.set`返回false，代码正常执行。
+
+   ~~~js
+   //1.假设对象中的name属性不允许修改
+   const obj = {}
+   Object.defineProperty(obj,"name",{
+       value:"name",
+       writable: false
+   })
+   //2.通过Proxy代理该对象之后，对obj的name属性就行修改会抛出错误，阻塞后面代码的执行
+   const proxy = new Proxy(obj, {
+       get(target, key,) {
+           // 注意，这里我们没有使用 Reflect 来进行读取
+           return target[key]
+       },
+       set(target, key, value) {
+           // 注意，这里同样没有使用 Reflect 来进行设置
+           return target[key] = value
+       }
+   })
+   proxy.name = '鲨鱼辣椒' // Uncaught TypeError
+   Reflect.set(obj, 'name', '鲨鱼辣椒') // false
+   ~~~
+
+2. **Reflect中的receiver参数可以理解为函数调用过程中的`this`， 可以解决 访问器属性中的 this 的指向导致无法触发响应式的问题**
+
+   `Reflect.get(target, key, receiver)` 类似于 `Reflect.get(target, key).call(receiver)` 改变 this 的指向。
+
+~~~js
+const obj = {
+    name: '鲨鱼辣椒',
+    get: value() {
+        console.log('value 中的 this：', this, this === obj)
+        return this.name
+    }
+}
+
+obj2 = {
+    name: '蜻蜓队长'
+}
+
+obj.get(); 
+// value 中的 this： {name: '鲨鱼辣椒', value: ƒ} true
+// '鲨鱼辣椒'
+
+Reflect.get(obj, get, obj2) // 蜻蜓队长
+~~~
+
 
