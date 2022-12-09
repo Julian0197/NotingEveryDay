@@ -45,7 +45,7 @@ TCP是**面向连接的、可靠的、基于字节流的**传输层通信协议
 
 ### 如何唯一确定一个TCP连接？
 
-TCP四元祖唯一确定一个连接：源地址、源端口号、目的地之、目的端口号
+**TCP四元祖唯一确定一个连接：源地址、源端口号、目的地址、目的端口号**
 
 源地址和目的地址的字段（32位）在IP头部，作用是通过IP协议发送报文给对方主机
 
@@ -126,3 +126,67 @@ UDP协议简单，头部只有8个字节（64位）
 
 ## TCP连接建立
 
+### TCP三次握手过程是怎样的？
+
+TCP是面向连接的协议，使用TCP前必须先建立连接，通过**TCP三次握手**
+
+<img src="https://cdn.xiaolincoding.com/gh/xiaolincoder/ImageHost4/%E7%BD%91%E7%BB%9C/TCP%E4%B8%89%E6%AC%A1%E6%8F%A1%E6%89%8B.drawio.png" alt="TCP 三次握手" style="zoom: 50%;" />
+
++ 一开始，客户端和服务端都处于`CLOSE`状态。服务端先主动监听某个端口，处于`LISTEN`状态。
+
+  <img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9jZG4uanNkZWxpdnIubmV0L2doL3hpYW9saW5jb2Rlci9JbWFnZUhvc3QyLyVFOCVBRSVBMSVFNyVBRSU5NyVFNiU5QyVCQSVFNyVCRCU5MSVFNyVCQiU5Qy9UQ1AtJUU0JUI4JTg5JUU2JUFDJUExJUU2JThGJUExJUU2JTg5JThCJUU1JTkyJThDJUU1JTlCJTlCJUU2JUFDJUExJUU2JThDJUE1JUU2JTg5JThCLzE1LmpwZw?x-oss-process=image/format,png" alt="第一个报文—— SYN 报文" style="zoom: 50%;" />
+
++ 客户端随机初始化序号（`client_isn`），将此序号置于TCP首部的[序列号]字段中，同时把`SYN`标志位置为1，SYN报文表示希望建立连接。接着把第一个SYN报文发送给客户端，表示向服务端发起连接，该报文不包含应用层数据，之后客户端处于`SYN-SENT`状态。
+
+  <img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9jZG4uanNkZWxpdnIubmV0L2doL3hpYW9saW5jb2Rlci9JbWFnZUhvc3QyLyVFOCVBRSVBMSVFNyVBRSU5NyVFNiU5QyVCQSVFNyVCRCU5MSVFNyVCQiU5Qy9UQ1AtJUU0JUI4JTg5JUU2JUFDJUExJUU2JThGJUExJUU2JTg5JThCJUU1JTkyJThDJUU1JTlCJTlCJUU2JUFDJUExJUU2JThDJUE1JUU2JTg5JThCLzE2LmpwZw?x-oss-process=image/format,png" alt="第二个报文 —— SYN + ACK 报文" style="zoom:50%;" />
+
++ 服务端收到客户端的`SYN`报文后，首先服务端也随机初始化自己的序号（`server_isn`），将此序号填入TCP首部的[序列号]字段中，其次把TCP首部的[确认应答号]填入刚刚收到的`client_isn + 1`，接着把`SYN`和`ACK`标志位置为1，ACK表示确认应答号字段有效。最后把该报文发送给客户端，该报文也不包含应用层数据，之后服务端处于`SYN-RCVD`状态。
+
+  <img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9jZG4uanNkZWxpdnIubmV0L2doL3hpYW9saW5jb2Rlci9JbWFnZUhvc3QyLyVFOCVBRSVBMSVFNyVBRSU5NyVFNiU5QyVCQSVFNyVCRCU5MSVFNyVCQiU5Qy9UQ1AtJUU0JUI4JTg5JUU2JUFDJUExJUU2JThGJUExJUU2JTg5JThCJUU1JTkyJThDJUU1JTlCJTlCJUU2JUFDJUExJUU2JThDJUE1JUU2JTg5JThCLzE3LmpwZw?x-oss-process=image/format,png" alt="第三个报文 —— ACK 报文" style="zoom:50%;" />
+
++ 客户端收到服务端报文后，还要向服务端回应最后一个应答报文，首先该应答报文TCP首部的`ACK`标识为1（TCP规定除了除了最初建立连接的SYN包其他都必须包的ACK必须都为1，标识确认应答号字段有效），其次[确认应答号]字段填入`server_isn + 1`，最后把报文发送给服务端，这次的报文可以携带客户到服务端的数据，之后客户端处于`ESTABLISHED`状态。
+
++ 服务端收到客户端的应答报文后，也进入`ESTABLISHED`状态。
+
+注意：**前两次握手不可以携带应用层数据，第三次握手可以。一旦完成三次握手，双方都处于`ESTABLISHED`状态，此时连接就已建立完成，客户端和服务端就可以互相发送数据了。**
+
+### 为什么是三次握手？而不是两次、四次？
+
+我们在前面知道了什么是**TCP连接**：
+
++ 用于保证可靠性和流量控制维护的某些状态信息，这些信息的组合，包括**Socket、序列号和窗口大小**称为连接。
+
+接下来，要从三方面分析三次握手的原因：
+
++ 三次握手才可以阻止重复历史连接的初始化（主要原因）
++ 三次握手才可以同步双方的初试序列号
++ 三次握手才可以避免资源浪费
+
+**原因1：避免历史连接**
+
+简单来说，三次握手的**首要原因是为了防止旧的重复连接初始化造成混乱。**
+
+考虑以下场景：客户端先发送SYN（seq=90）报文，然后客户端宕机了，而这个SYN报文又被网络阻塞了，服务端没有收到，接着客户端重启后，又重新向服务端建立连接，发送了SYN（seq=100）报文**（注意，这不是重传SYN，重传的SYN序列号一样）**。
+
+TCP三次握手会阻止历史连接。
+
+<img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9jZG4uanNkZWxpdnIubmV0L2doL3hpYW9saW5jb2Rlci9JbWFnZUhvc3QyLyVFOCVBRSVBMSVFNyVBRSU5NyVFNiU5QyVCQSVFNyVCRCU5MSVFNyVCQiU5Qy9UQ1AtJUU0JUI4JTg5JUU2JUFDJUExJUU2JThGJUExJUU2JTg5JThCJUU1JTkyJThDJUU1JTlCJTlCJUU2JUFDJUExJUU2JThDJUE1JUU2JTg5JThCLzE5LmpwZw?x-oss-process=image/format,png" alt="三次握手避免历史连接" style="zoom: 50%;" />
+
+客户端连续发送多次SYN（都是同一个四元祖：源地址、源端口号、目的地址、目的端口号）建立连接的报文，在**网络拥堵**情况下：
+
++ 一个旧SYN报文比新SYN报文早到了服务端，此时服务端会返回一个`SYN + ACK`报文，次报文中的确认应答号是91（90+1）。
++ 客户端收到后，发现自己期望收到的确认应答号是100+1，而不是90+1，于是会回`RST`报文（RST表示TCP连接出现异常必须断开连接）
++ 服务端收到RST报文后，就会释放连接。
++ 后续最新的SYN抵达了服务端后，客户端与服务端就可以正常的完成三次握手
+
+上述中的旧SYN报文称为历史连接，TCP使用三次握手建立连接的最主要原因就是为了**防止历史连接初始化了连接**。
+
+> 如果服务端在收到RST报文之前，先收到了新SYN报文，也就是服务端收到客户端的顺序是：旧SYN报文 => 新SYN报文 => RST报文，会发生什么？
+>
+> 服务端第一次收到旧SYN报文，会回复`SYN + ACK`报文给客户端，确认应答号是90+1
+>
+> 紧接着收到新SYN报文，会回复`challenge ack`，**这个ack报文并不是确认收到新SYN报文的，而是上一次的ack确认号，90+1**。所以客户端收到此ACK报文时，发现自己期望收到的确认号应该是101，而不是91，会回复RST报文。
+
+**如果是两次握手连接，就无法阻止历史连接：**
+
+**在两次握手的情况下，服务端没有中间状态给客户端来阻止历史连接，导致服务端可能建立一个历史连接，造成资源浪费**
