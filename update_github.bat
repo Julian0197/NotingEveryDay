@@ -1,7 +1,15 @@
 @echo off
+
 cd /d "F://面试前端八股"
-today = $(date +%Y-%m-%d)
+
+rem 获取当前日期
+for /f "tokens=1-3 delims=/" %%a in ('date /t') do (
+  set today=%%c-%%a-%%b
+)
+
 git add .
-git commit -m "auto update at $today"
+git commit -m "Automatic update on %today%"
 git push origin master
+
+echo Code was successfully pushed to Github on %today%
 pause
