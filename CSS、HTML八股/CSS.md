@@ -282,7 +282,7 @@ HTML中的替换元素：img、input、textarea、select
 
 1. 额外标签法
 
-在浮动元素末尾添加一个空的标签。
+在浮动元素末尾添加一个空的标签。`clear:both`
 
 ~~~css
 <div style = "clear:both"> </div> /*新增的盒子必须是块级元素*/
@@ -689,3 +689,385 @@ document.body.clientHeight // body 高度
 - `vh`  相对于视口高度的 1%
 
 视口（Viewport）= 浏览器窗口的尺寸。如果视口为 50 厘米宽，则 1vw = 0.5 厘米。
+
+## 3 实际应用
+
+### 3.1 如何让盒子垂直居中
+
+~~~css
+  <style>
+    .parent {
+      width: 500px;
+      height: 500px;
+      background-color: skyblue;
+    }
+    .child {
+      width: 200px;
+      height: 200px;
+      background-color: pink;
+    }
+  </style>
+</head>
+
+<body>
+  <div class='parent'>
+    <div class='child'></div>
+  </div>
+</body>
+~~~
+
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20210512181458387.png)
+
+#### 方法1 定位 子绝父相
+
+1. transform调整位置
+
+~~~css
+.parent {
+  position: relative;
+}
+
+.child {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  // 再让盒子往回移动自己宽高的一般
+  transform: translate(-50%, -50%);
+}
+~~~
+
+2. 通过margin
+
+~~~css
+.child {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  bottom: 0px;
+  right: 0px;
+  margin: auto;
+}
+~~~
+
+#### 方法2 flex布局
+
+将父盒子设置成弹性盒容器
+让子元素水平居中，垂直居中
+
+~~~css
+.parent {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+~~~
+
+#### 方法3 inline-block
+
+子盒子设置成行内块
+
+~~~css
+.child {
+    display: inline-block;
+}
+~~~
+
+给父盒子添加
+
+行高设置成和height属性一样，内部文字会垂直居中
+
+~~~css
+.parent {
+    text-align: center;
+    line-height: 500px
+}
+~~~
+
+再给子盒子添加
+
+```css
+.child {
+  vertical-align: middle;
+}
+```
+
+### 3.2 用纯CSS画三角形
+
+将元素的宽高设为0，只设置 border ，把任意三条边隐藏掉（颜色设为 transparent），剩下的就是一个三角形。
+
+~~~css
+.triangle {
+  width: 0;
+  height: 0;
+  border-width: 20px;
+  border-style: solid;
+  border-color: transparent transparent red transparent
+}
+~~~
+
+<img src="C:\Users\MSK\AppData\Roaming\Typora\typora-user-images\image-20230131102910200.png" alt="image-20230131102910200" style="zoom:50%;" />
+
+### 3.3 页面布局方式
+
+| 方式                            | 布局特点                                                     | 设计方法                                                     | 缺点                                                         |
+| ------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| 静态布局（Static Layout）       | 无论浏览器尺寸具体多少，网页布局始终按照最初写代码时的布局来实现 | 居中布局，所有样式使用绝对宽度和高度px；屏幕宽高调整时通过滚动条来浏览被遮掩部分 | 不能根据用户的屏幕尺寸做出不同表现                           |
+| 流式布局（Liquid Layout）       | 屏幕分辨率变化时，页面内元素的大小会变化而布局不变；屏幕太大或太小都会导致元素无法正常显示 | 使用%定义宽度，px定义高度，配合max-width/min-width控制尺寸流动范围以免过大或过小影响阅读 | 如果屏幕尺寸跨度太大，那么在相对其原始设计而言过小或过大的屏幕上不能正常显示 |
+| 自适应布局（Adaptive Layout）   | 屏幕分辨率变化时，页面内元素的位置会变化而大小不会变化       | 创建多个静态布局，每个静态布局对应一个屏幕分辨率范围，屏幕分辨率改变时，切换不同的静态布局（通过@media媒体查询给不同尺寸的设备切换不同样式） | 需要需要为不同的设备开发不同的页面，增加开发成本；当需求改变时可能会改动多套代码，流程繁琐。 |
+| 响应式布局（Responsive Layout） | 每个屏幕分辨率下会有一个布局样式，即屏幕分辨率变化时，元素位置和大小都会变 | @media媒体查询+流式布局                                      | 媒体查询是有限的，只能适应主流媒体的宽高                     |
+| 弹性布局（rem/em布局）          | 包裹文字的各元素的尺寸采用rem/em做单位（em相对其父元素，rem始终相对html大小，即页面根元素），页面主要划分区域的尺寸仍使用百分数或px | 一般使用rem，根据屏幕大小来控制html元素的font-size，即可自动改变所有用rem定义尺寸的元素的大小 | 只做到了宽度自适应，无法满足一些对高度或者元素间距要求较高的设计 |
+
++ 流式布局用于解决类似的设备不同分辨率之间的兼容（分辨率差异较小）；
+
++ 响应式布局用于解决不同设备之间不同分辨率的兼容（分辨率差异较大）
+
++ 响应式和自适应根据不同设备采用不同CSS，且CSS都采用百分比确定宽度
+
+  + 响应式布局在不同设备上看上去是不一样的，会随着设备的改变而改变展示样式；
+
+  + 自适应布局在所有的设备上看上去是一样的模板，不过是长度或者图片变小了
+
+### 3.4 CSS预处理器和后处理器
+
+预处理器，如：less，sass，stylus,用来预编译sass或者less，增加了css代码的复用性，还有层级，mixin， 变量，循环， 函数等，对编写以及开发UI组件都极为方便。
+
+后处理器， 如： postCss,通常被视为在完成的样式表中根据css规范处理css，让其更加有效。目前最常做的是给css属性添加浏览器私有前缀，实现跨浏览器兼容性的问题。
+
+### 3.5 link和@import的区别
+
+页面中使用CSS的方式主要有三种：1.行内添加定义style属性值。2.页面头部内嵌调用。3.外面链接调用。
+其中外面引用有以下两种：link和@import。
+
+1. `link`：是 HTML 标签，在页面加载时同步加载样式表，不会阻塞页面的渲染。
+2. `@import`：是 CSS 规则，在页面渲染时加载样式表，会阻塞页面的渲染。
+
+总体来说，建议使用 `link`，因为它不会阻塞页面渲染，并且对于搜索引擎友好。
+
+### 3.6 CSS sprites是什么
+
+CSS sprites精灵图 是一种合并多个图像为一个大图像的技术，用于**减少网页加载时的 HTTP 请求数量。**
+
+使用 CSS sprites 的方法如下：
+
+1. 合并图像：将需要用到的图像合并为一个大图像。
+2. 创建 CSS 规则：为每个图像创建一个 CSS 规则，通过 background-image、background-position 和 background-size 属性定义图像的位置和大小。
+3. 应用 CSS 规则：将 CSS 规则应用到 HTML 元素上，使用 background-image 属性引用大图像，并通过 background-position 属性指定显示的图像部分。
+
+使用 CSS sprites 可以提高网页的加载速度，并且可以减少服务器的负载，但在图像数量很多的情况下，CSS 规则可能会变得很复杂，影响开发效率。因此，需要根据项目的具体情况选择是否使用 CSS sprites。
+
+### 3.7 圣杯布局
+
+~~~html
+<header>头部</header>
+<div>
+  <div class="center">主区域</div>
+  <div class="left">左区域</div>
+  <div class="right">右区域</div>
+</div>
+<footer>底部</footer>
+~~~
+
+~~~~css
+header {
+  background-color: pink;
+}
+
+.center {
+  width: 100%; /* middle占据整个container，左右被挤下去 */
+  background-color: skyblue;
+}
+
+.left {
+  background-color: green;
+  width: 100px;
+}
+
+.right {
+  width: 100px;
+  background-color: red;
+}
+
+footer {
+  background-color: pink;
+}
+~~~~
+
+同样实现以下的三栏布局：
+
+![在这里插入图片描述](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/ded5ee78d75a4e8a91ca8811eeeeceda~tplv-k3u1fbpfcp-zoom-in-crop-mark:4536:0:0:0.awebp)
+
+
+
+**具体实现：**
+
++ center放在最前面，三个区域添加浮动，在三个区域的外面清除浮动
+
+  ~~~html
+  <header>头部</header>
+  <div class="clearfix wrapper">
+    <div class="center float_left">主区域</div>
+    <div class="left float_left">左区域</div>
+    <div class="right float_left">右区域</div>
+  </div>
+  <footer>底部</footer>
+  ~~~
+
+  ~~~css
+  .float_left {
+    float: left;
+  }
+  
+  .clearfix::after {
+    content: '';
+    display: block;
+    clear: both;
+  }
+  ~~~
+
++ 主区域两边留空padding，两侧区域上来 margin负值 + 定位
+
+  ~~~css
+  .wrapper {
+    padding: 0 100px;
+  }
+  .left {
+    background-color: green;
+    width: 100px;
+    margin-left: -100%;  /* 拉回到上一行 */
+    position: relative; 
+    left: -100px;
+  }
+  .right {
+    margin-left: -100px; /* 拉回到上一行 */
+    position: relative; 
+    right: -100px;
+  }
+  ~~~
+
+圣杯布局实现完毕。
+
+### 3.8 双飞翼布局
+
+~~~css
+<body>
+  <header>头部</header>
+  <div class="main">
+    <div class="center">主区域</div>
+  </div>
+  <div class="left">左区域</div>
+  <div class="right">右区域</div>
+  <footer>底部</footer>
+</body>
+~~~
+
+~~~~css
+header {
+  background-color: pink;
+}
+
+.main {
+  width: 100%;
+  background-color: skyblue;
+}
+
+.left {
+  width: 100px;
+  background-color: green;
+}
+
+.right {
+  width: 100px;
+  background-color: red;
+}
+
+footer {
+  background-color: pink;
+}
+~~~~
+
+使用 HTML 的 div 元素创建三个区域，分别是 header、main 和 footer。
+
+要实现以下效果：
+
+![在这里插入图片描述](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/16b3b4934cdc482eb31d129a631ef502~tplv-k3u1fbpfcp-zoom-in-crop-mark:4536:0:0:0.awebp)
+
+**具体实现：**
+
++ 先给三个中间三个区域添加**浮动**，注意要清除浮动，在浮动元素最后的标签添加`clear: both`，因为浮动元素不仔标准流会影响布局，会和底部重叠。
+
+  ~~~html
+  <header>头部</header>
+  <div class="main float_left">
+    <div class="center">主区域</div>
+  </div>
+  <div class="left float_left">左区域</div>
+  <div class="right float_left">右区域</div>
+  <footer>底部</footer>
+  ~~~
+
+  ~~~css
+  .float_left {
+    float: left;
+  }
+  
+  footer {
+    background-color: pink;
+    clear: both;
+  }
+  ~~~
+
+  ![在这里插入图片描述](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/acdfd4c5d68b41cd8cc9d60a8f377066~tplv-k3u1fbpfcp-zoom-in-crop-mark:4536:0:0:0.awebp)
+
++ 主区域两边留出`margin`给左右区域，左右两侧区域给margin**负值**
+
+  + 左侧给`margin-left: -100%`
+  + 右侧给`margin-left: -100px`
+
+  ~~~css
+  .center {
+    margin: 0 100px;
+  }
+  .left {
+    width: 100px;
+    background-color: green;
+    margin-left: -100%;
+  }
+  
+  .right {
+    width: 100px;
+    background-color: red;
+    margin-left: -100px;
+  }
+  ~~~
+
+双飞翼完成。
+
+### 3.9 总结双飞翼布局和圣杯布局的区别
+
+双飞翼布局和圣杯布局是两种常用的网页布局方式，它们的主要区别如下：
+
+1. 布局结构：双飞翼布局是通过左右两个侧栏和中间的内容区域组成的，圣杯布局则是通过两个宽度固定的列和一个自适应宽度的中间列组成的。
+2. 布局原理：双飞翼布局是通过浮动和外边距来实现的，圣杯布局是通过绝对定位和左右 margin 实现的。
+3. 布局灵活性：**双飞翼布局对于宽度固定的两侧列比较灵活，圣杯布局对于中间列比较灵活。**
+4. 适用场景：双飞翼布局适用于宽度固定的两侧列需要占据页面的比较多的情况，圣杯布局适用于中间列需要占据页面比较多的情况。
+
+总体来说，双飞翼布局和圣杯布局都是适用于**三列布局**的情况，**取决于需要较多的列的宽度是否固定**，从而决定使用哪种布局方式。
+
+## 4 其他相关知识
+
+### 4.1 总结不同图片格式的使用场景的区别
+
++ png：无损压缩，压缩比高，色彩好
++ jpg：文件相对小，支持有损压缩
++ gif：适用动画
++ bmp：不支持压缩，文件大，适用壁纸
++ webp：谷歌推出，支持有损压缩和无损压缩，压缩比和压缩速度更高，但是兼容不好
+
+### 4.2 图片base64编码
+
+base64通过算法将图片编码成一长串字符串。
+
++ 有助于减少网络请求
++ 增加文件体积
++ 无法直接缓存，要缓存只能缓存包含base64的文件，比如HTML或者CSS，这相比域直接缓存图片的效果要差很多。
++ 兼容性不好
