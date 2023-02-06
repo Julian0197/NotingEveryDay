@@ -276,13 +276,38 @@ Function.prototyp.softBind = function(obj) {
 ~~~js
 function getType(value) {
     if (typeof value === 'object') {
-        let valueClass = Object.prototype.toString.call(value) // [[Object Class]]
+        let valueClass = Object.prototype.toString.call(value) // [object Class]
         let type = valueClass.split(' ')[1].split('')
         type.pop() // 去除最后的]
         return type.join("").toLowerCase()
     } else {
         return typeof value
     }
+}
+~~~
+
+`[object Class]`也可以用正则表达式获取，`String.prototype.match()`方法返回一个数组，其中包含与正则表达式相匹配的结果。如果没有找到任何匹配，则返回 `null`。
+
+如果找到了匹配，数组中的第一个元素将是完整的匹配字符串，后续元素将是匹配正则表达式中的捕获组（如果有的话）。每个捕获组的结果将作为数组的一个独立元素。
+
+~~~python
+let str = "The quick brown fox";
+let result = str.match(/quick (brown) fox/);
+console.log(result);
+// Output: [ "quick brown fox", "brown", index: 4, input: "The quick brown fox" ]
+~~~
+
+数组的第一个元素 `result[0]` 表示完整的匹配字符串（"quick brown fox"）。第二个元素 `result[1]` 表示第一个捕获组的匹配字符串（"brown"）。第三个元素 `result[2]` 表示完整匹配字符串在输入字符串中的起始位置（4），第四个元素 `result[3]` 表示输入字符串本身（"The quick brown fox"）。
+
+~~~js
+function getType(value) {
+  if (typeof value === 'object') {
+    let valueClass = Object.prototype.toString.call(value) 
+    // 匹配[object class]中的class字符串
+    return valueClass.match(/\[object (.*)\]/)[1].toLowerCase()
+  } else {
+    return typeof value
+  }
 }
 ~~~
 

@@ -4,7 +4,7 @@ cd /d "F://面试前端八股"
 
 rem 获取当前日期
 for /f "tokens=1-3 delims=/" %%a in ('date /t') do (
-  set today=%%c-%%a-%%b
+  set today=%%a-%%b-%%c
 )
 
 git add .
