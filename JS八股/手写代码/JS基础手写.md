@@ -212,9 +212,35 @@ b.bind(a,1,2)()// 3 需要手动调用
 ~~~
 
 1. 判断调用对象是否为函数
+
 2. 保存当前函数的引用，获取其余传入的参数
+
 3. 创建一个函数返回
+
 4. 函数内部使用apply绑定函数调用，**需要判断函数作为构造函数的情况，这个时候需要传入当前函数的 this 给 apply 调用**，其余情况都传入指定的上下文对象。
+
+   ~~~js
+   function Person(name, age) {
+     this.name = name;
+     this.age = age;
+   }
+   Person.prototype.sayName = function () {
+     console.log(this.name);
+   }
+   
+   var obj = {};
+   var Bound = Person.bind(obj, 'xman');
+   // new出来的，函数内部this强制绑定bound上，而不是传入的obj
+   var bound = new Bound('22');
+   
+   console.log(bound.name);  // 'xman'
+   console.log(bound.age);  // 22
+   bound.sayName();  // xman
+   
+   bound instanceof Person;  // true
+   bound instanceof Bound;  // true
+   ~~~
+
 5. 返回的构造函数需要有原函数的prototype，而且必须保证修改返回函数的prototype，原函数的属性方法不会改变，因此要深拷贝
 
 ~~~js
@@ -487,7 +513,7 @@ console.log(obj2); //{a:1,b:{c:2}}
 
 1. **`JSON.stringify()`**
 
-+ `JSON.parse(JSON.stringify(obj))`，先利用`JSOS.stringify`将js对象序列化（JSON字符串），再使用`JSON.parse`反序列化还原为js对象
++ `JSON.parse(JSON.stringify(obj))`，先利用`JSON.stringify`将js对象序列化（JSON字符串），再使用`JSON.parse`反序列化还原为js对象
 + 这个方法可以简单粗暴地实现深拷贝，但是拷贝的对象中如果存在`函数`、`undefined`、`symbol`，当使用`JSON.stringify()`进行处理后都会消失
 
 ~~~js
@@ -520,7 +546,7 @@ console.log(obj1.b.f === obj2.b.f);// false
 
 ~~~js
 // target为要深拷贝的对象，map存储已经克隆过的对象
-function deepClone(target, map= new weakMap()) {
+function deepClone(target, map= new WeakMap()) {
     // 先判断target是否是引用类型数据，是的话就循环遍历所有元素
     if (typeof target === "object") {
         // 再判断是否已经克隆过了，如果克隆过直接返回结果
@@ -556,6 +582,6 @@ WeakMap 不支持迭代以及 keys()，values() 和 entries() 方法。所以没
 
 WeakMap 的主要优点是它们对对象是弱引用，被它们引用的对象很容易地被垃圾收集器移除。但这是以不支持一些对象方法为代价换来的
 
-<img src="C:\Users\MSK\AppData\Roaming\Typora\typora-user-images\image-20221112141836131.png" alt="image-20221112141836131" style="zoom: 33%;" />
+<img src="C:\Users\MSK\AppData\Roaming\Typora\typora-user-images\image-20221112141836131.png" alt="image-20221112141836131" style="zoom: 50%;" />
 
-<img src="C:\Users\MSK\AppData\Roaming\Typora\typora-user-images\image-20221112141901007.png" alt="image-20221112141901007" style="zoom:35%;" />
+<img src="C:\Users\MSK\AppData\Roaming\Typora\typora-user-images\image-20221112141901007.png" alt="image-20221112141901007" style="zoom: 50%;" />

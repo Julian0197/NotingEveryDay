@@ -72,7 +72,7 @@ Array.prototype.splice.call(arguments, 0)
 - 通过 apply 调用数组的 `concat` 方法来实现转换
 
 ```javascript
-Array.prototype.caocat.apply([], arguments)
+Array.prototype.concat.apply([], arguments)
 ```
 
 - 通过 `Array.from` 方法来实现转换
@@ -89,7 +89,7 @@ Array.from(arguments)
 
 ~~~js
 function foo() {
-    Array.prototype.call.call(arguments, a => console.log(a))
+    Array.prototype.call(arguments, a => console.log(a))
 }
 ~~~
 
