@@ -190,3 +190,51 @@ TCP三次握手会阻止历史连接。
 **如果是两次握手连接，就无法阻止历史连接：**
 
 **在两次握手的情况下，服务端没有中间状态给客户端来阻止历史连接，导致服务端可能建立一个历史连接，造成资源浪费**
+
+两次握手，服务器一开始收到旧SYN报文后，就进入ESTABLISHED状态，这时就可以发送数据。后面再收到RST报文断开连接，就会白白建立一次连接，发送了数据，造成资源浪费。
+
+
+
+**原因1：同步双方初试序列号**
+
+TCP传输过程中，序列号的作用：
+
++ 接收方可以去除重复数据
++ 接收方可以按照序列号按序接受
++ 可以标识发送出去的数据包中， 哪些是已经被对方收到的（通过 ACK 报文中的序列号知道）
+
+当客户端发送携带「初始序列号」的 `SYN` 报文的时候，需要服务端回一个 `ACK` 应答报文，表示客户端的 SYN 报文已被服务端成功接收，那当服务端发送「初始序列号」给客户端的时候，依然也要得到客户端的应答回应，**这样一来一回，才能确保双方的初始序列号能被可靠的同步。**
+
+而四次握手可以被简化为三次握手。
+
+<img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9jZG4uanNkZWxpdnIubmV0L2doL3hpYW9saW5jb2Rlci9JbWFnZUhvc3QyLyVFOCVBRSVBMSVFNyVBRSU5NyVFNiU5QyVCQSVFNyVCRCU5MSVFNyVCQiU5Qy9UQ1AtJUU0JUI4JTg5JUU2JUFDJUExJUU2JThGJUExJUU2JTg5JThCJUU1JTkyJThDJUU1JTlCJTlCJUU2JUFDJUExJUU2JThDJUE1JUU2JTg5JThCLzIwLmpwZw?x-oss-process=image/format,png" alt="四次握手与三次握手" style="zoom:50%;" />
+
+### 为什么每次建立TCP连接，初始化序列号都要求不一样？
+
++ （主要）为了防止历史报文被下一个相同四元祖连接接受
++ 安全性，防止黑客伪造相同序列号的TCP报文被对方接受
+
+## TCP连接断开
+
+### TCP四次挥手过程
+
+<img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9jZG4uanNkZWxpdnIubmV0L2doL3hpYW9saW5jb2Rlci9JbWFnZUhvc3QyLyVFOCVBRSVBMSVFNyVBRSU5NyVFNiU5QyVCQSVFNyVCRCU5MSVFNyVCQiU5Qy9UQ1AtJUU0JUI4JTg5JUU2JUFDJUExJUU2JThGJUExJUU2JTg5JThCJUU1JTkyJThDJUU1JTlCJTlCJUU2JUFDJUExJUU2JThDJUE1JUU2JTg5JThCLzMwLmpwZw?x-oss-process=image/format,png" alt="客户端主动关闭连接 —— TCP 四次挥手" style="zoom:60%;" />
+
++ 客户端打算关闭连接，发送一个TCP首部`FIN`标志位为1的报文，此后客户端进入`FIN_WAIT_1`状态
+  + 此时仅表示客户端不再发送数据了，但可以接受数据
++ 服务端收到报文后，想客户端发送`ACK`应答报文，服务端也进入`CLOSE_WAIT`状态
+  + 此时服务端可能还有数据要处理和发送
++ 客户端收到`ACK`应答报文后，进入`FIN_WAIT_2`状态
++ 等待服务端处理完数据后，也向客户端发送`FIN`报文，之后服务端进入`LAST_ACK`状态
+  + 服务端主动发送FIN，才表示服务端后续不再发送数据
++ 客户端收到`FIN`报文，回一个`ACK`应答报文，之后进入`TIME_WAIT`状态
++ 服务端收到`ACK`应答报文，就进入了`CLOSE`状态，至此服务端已经完成连接的关闭
++ 客户端在经过 `2MSL` 一段时间后，自动进入 `CLOSE` 状态，至此客户端也完成连接的关闭。
+
+每个方向都需要**一个 FIN 和一个 ACK**，因此通常被称为**四次挥手**。
+
+这里一点需要注意是：**主动关闭连接的，才有 TIME_WAIT 状态。**
+
+### 为什么挥手需要四次？
+
+在客户端发送`FIN`报文，表明不再发送数据后，服务端发送应答报文`ACK`，但这个时候可能还需要等待完成数据的发送和处理。所以服务端的`ACK`和`FIN`不能放在一起，需要分开发送，所以挥手过程为四次。
