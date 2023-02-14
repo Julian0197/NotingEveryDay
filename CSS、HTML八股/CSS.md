@@ -774,7 +774,7 @@ document.body.clientHeight // body 高度
 
 给父盒子添加
 
-行高设置成和height属性一样，内部文字会垂直居中
+行高设置成和height属性一样，内部文字会水平居中
 
 ~~~css
 .parent {
