@@ -10,14 +10,33 @@ function fetch(index, type) {
     }, (4 - index) * 1000);
   });
 }
-
+// fetch(1, "one");
+// fetch(2, "one");
+// fetch(3, "one");
 // 场景一：同时只有一个在进行中的请求，一个结束后再进行下一个
+// 是否有正在进行的请求
+let isRequesting = false;
+// 队列按顺序保存请求返回的Promise对象
+const queue = [];
+
 function fetchOnlyOne(index) {
-  // 第一个请求
-  if (queue.length === 0) {
-    fetch(index, 'one').then((result) => {
-      
-    })
+  let requestPromise = fetch(index, "one")
+  queue.push(requestPromise);
+  // 没有其他请求执行
+  if (!isRequesting) {
+    request();
+  }
+}
+function request() {
+  if (queue.length > 0) {
+    let curRequest = queue[0];
+    curRequest.then(() => {
+      isRequesting = true;
+      queue.shift();
+      request();
+    });
+  } else {
+    isRequesting = false;
   }
 }
 fetchOnlyOne(1);
