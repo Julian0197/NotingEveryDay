@@ -4,38 +4,49 @@ const REJECTED = "rejected";
 
 class MyPromise {
   /**
-   * 
+   *
    * @param {function} executor 执行器函数（同步执行）(resolve, reject) => {}
    */
   constructor(executor) {
     // 初始化值
-    this.initValue()
+    this.initValue();
     // 初始化this指向
-    this.initBind()
+    this.initBind();
     // 立即同步执行executor函数
-    executor(this.resolve, this.reject)
+    executor(this.resolve, this.reject);
   }
 
   initValue() {
-    this.status = PENDING
-    this.result = null
+    this.status = PENDING;
+    this.result = null;
+    this.callbacks = [];
   }
 
   // resolve和reject的this永远指向当前MyPromise的实例
   initBind() {
-    this.resolve = this.resolve.bind(this)
-    this.reject = this.reject.bind(this)
+    this.resolve = this.resolve.bind(this);
+    this.reject = this.reject.bind(this);
   }
 
   /**
    * executor内部成功时调用的函数
-   * @param {*} value 
+   * @param {*} value
    */
   resolve(value) {
     // 当前状态不是pending，直接结束
-    if (this.status !== PENDING) return
-    this.status = FULFILLED
-    this.result = value
+    if (this.status !== PENDING) return;
+    this.status = FULFILLED;
+    this.result = value;
+    // resolve在异步任务中，执行then时还处于pending状态，此时要保存回调函数
+    if (this.callbacks.length > 0) {
+      // 一旦resolve执行，调用所有成功的回调函数
+      // then中是微任务
+      setTimeout(() => {
+        this.callbacks.forEach((callbacksObj) => {
+          callbacksObj.onResolved(value);
+        })
+      })
+    }
   }
 
   /**
@@ -43,14 +54,89 @@ class MyPromise {
    *  @param {*} reason
    */
   reject(reason) {
-    if (this.status !== PENDING) return
-    this.status = REJECTED
-    this.result = reason
+    if (this.status !== PENDING) return;
+    this.status = REJECTED;
+    this.result = reason;
+    if (this.callbacks.length > 0) {
+      // 一旦resolve执行，调用所有成功的回调函数
+      setTimeout(() => {
+        this.callbacks.forEach((callbacksObj) => {
+          callbacksObj.onRejected(value);
+        })
+      })
+    }
+  }
+
+  /**
+   *
+   * @param {function} onResolved
+   * @param {function} onRejected
+   */
+  then(onResolved, onRejected) {
+    onResolved =
+      typeof onResolved === "function" ? onResolved : (value) => value;
+    onRejected =
+      typeof onRejected === "function"
+        ? onRejected
+        : (reason) => {
+            throw reason;
+          };
+
+    return new MyPromise((resolve, reject) => {
+      /**
+       * 处理then传入的回调函数
+       * then返回一个新的Promise对象
+       * Promise的状态由回调函数的执行结果确定
+       * @param {*} callback
+       */
+      function handle(callback) {
+        try {
+          const result = callback(this.result);
+          if (result instanceof MyPromise) {
+            // 如果返回一个Promise，由新Promise的状态决定
+            result.then(resolve, reject);
+          } else {
+            // 返回值，就返回一个成功状态的Promise
+            resolve(result);
+          }
+        } catch (error) {
+          reject(error);
+        }
+      }
+
+      if (this.status === PENDING) {
+        // pending状态说明，执行器函数是异步任务，要保存回调函数
+        this.callbacks.push({
+          onResolved() {
+            handle(onResolved)
+          },
+          onRejected() {
+            handle(onRejected)
+          }
+        })
+      } else if (this.status === RESOLVED) {
+        // then是微任务，用settimeout包裹
+        setTimeout(() => {
+          handle(onResolved)
+        });
+      } else {
+        setTimeout(() => {
+          handle(onRejected)
+        });
+      }
+
+      // catch直接执行reject
+      catch(onRejected) {
+        return this.then(undefined, onRejected)
+      }
+    });
   }
 }
 
 const test1 = new MyPromise((resolve, reject) => {
-  resolve('success')
-})
-console.log(test1)
+  setTimeout(() => {
+    resolve("success");
+  }, 1000);
+});
 
+test1.then((res) => console.log(res));

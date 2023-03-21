@@ -54,7 +54,7 @@
 
     // 立即同步执行excutor
     try {
-      excutor(resolve, )
+      excutor(resolve, reject)
     } catch (error) { // 执行器抛出异常，promise对象变为rejected状态
       reject(error)
     }
