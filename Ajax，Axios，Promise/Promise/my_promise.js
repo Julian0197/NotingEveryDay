@@ -1,5 +1,5 @@
 const PENDING = "pending";
-const FULFILLED = "fulfilled";
+const RESOLVED = "resolved";
 const REJECTED = "rejected";
 
 class MyPromise {
@@ -35,14 +35,14 @@ class MyPromise {
   resolve(value) {
     // 当前状态不是pending，直接结束
     if (this.status !== PENDING) return;
-    this.status = FULFILLED;
+    this.status = RESOLVED;
     this.result = value;
     // resolve在异步任务中，执行then时还处于pending状态，此时要保存回调函数
     if (this.callbacks.length > 0) {
       // 一旦resolve执行，调用所有成功的回调函数
       // then中是微任务
       setTimeout(() => {
-        this.callbacks.forEach((callbacksObj) => {
+        this.callbacks.forEach(callbacksObj => {
           callbacksObj.onResolved(value);
         })
       })
@@ -60,8 +60,8 @@ class MyPromise {
     if (this.callbacks.length > 0) {
       // 一旦resolve执行，调用所有成功的回调函数
       setTimeout(() => {
-        this.callbacks.forEach((callbacksObj) => {
-          callbacksObj.onRejected(value);
+        this.callbacks.forEach(callbacksObj => {
+          callbacksObj.onRejected(reason);
         })
       })
     }
@@ -107,12 +107,8 @@ class MyPromise {
       if (this.status === PENDING) {
         // pending状态说明，执行器函数是异步任务，要保存回调函数
         this.callbacks.push({
-          onResolved() {
-            handle(onResolved)
-          },
-          onRejected() {
-            handle(onRejected)
-          }
+          onResolved: () => handle(onResolved),
+          onRejected: () => handle(onRejected)
         })
       } else if (this.status === RESOLVED) {
         // then是微任务，用settimeout包裹
@@ -124,19 +120,19 @@ class MyPromise {
           handle(onRejected)
         });
       }
-
-      // catch直接执行reject
-      catch(onRejected) {
-        return this.then(undefined, onRejected)
-      }
     });
+    
+  }
+
+  // catch直接执行reject
+  catch (onRejected) {
+    return this.then(undefined, onRejected)
   }
 }
 
-const test1 = new MyPromise((resolve, reject) => {
-  setTimeout(() => {
-    resolve("success");
-  }, 1000);
-});
+const p = new MyPromise((resolve, reject) => {
+  resolve(1)
+}).then(res => console.log(res), err => console.log(err))
 
-test1.then((res) => console.log(res));
+console.log(2)
+

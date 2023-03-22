@@ -1,16 +1,11 @@
-/**
- * 自定义Promise函数模块：IIFE（立即调用函数表达式）
- */
-
-(function (window) {
 
   const PENDING = 'pending'
   const RESOLVED = 'resolved'
   const REJECTED = 'rejected'
 
-  class Promise {
+  class MyPromise {
     /**
-     * Promise构造函数
+     * MyPromise构造函数
      * @param {function} executor 执行器函数（同步执行）(resolve, reject) => {}
      */
     constructor(executor) {
@@ -31,7 +26,7 @@
         self.data = value
         if (self.callbacks.length > 0) {
           // 当执行器函数中是异步任务，会先保存回调函数
-          // 执行完毕后，调用回调函数，在这里面return 一个新的promise，并根据执行结果改变状态
+          // 执行完毕后，调用回调函数，在这里面return 一个新的MyPromise，并根据执行结果改变状态
           setTimeout(() => {
             self.callbacks.forEach(callbacksObj => {
               callbacksObj.onResolved(value)
@@ -62,7 +57,7 @@
 
 
     /**
-     * Promise的原型对象的then方法
+     * MyPromise的原型对象的then方法
      * @param {function} onResolved 
      * @param {function} onRejected 
      */
@@ -74,15 +69,15 @@
       onRejected = typeof onRejected === 'function' ? onRejected : reason => {throw reason}
       const self = this
 
-      return new Promnise((resolve, reject) => {
+      return new MyPromise((resolve, reject) => {
         /**
-         * 调用指定回调函数处理，根据执行结果，改变return的promise的状态
+         * 调用指定回调函数处理，根据执行结果，改变return的MyPromise的状态
          * @param {function} callback 指定的成功或者失败的回调函数
          */
         function handle(callback) {
           try {
             const result = callback(self.data)
-            if (result instanceof Promise) {
+            if (result instanceof MyPromise) {
               result.then(resolve, reject)
             } else {
               resolve(result)
@@ -93,7 +88,7 @@
         }
 
         if (self.status === PENDING) { // pending状态，说明执行器函数中是异步任务，将回调函数保存
-          self.callbacks.push({ // 等异步任务结束后，调回调函数，同时要改变return的promise的状态
+          self.callbacks.push({ // 等异步任务结束后，调回调函数，同时要改变return的MyPromise的状态
             onResolved() {
               handle(onResolved)
             },
@@ -118,12 +113,12 @@
     }
 
     /**
-     * Promise函数对象的resolve方法，类方法用static关键字
+     * MyPromise函数对象的resolve方法，类方法用static关键字
      * @param {*} value 
      */
     static resolve(value) {
-      return new Promise((resolve, reject) => {
-        if (value instanceof Promise) {
+      return new MyPromise((resolve, reject) => {
+        if (value instanceof MyPromise) {
           value.then(resolve, reject)
         } else {
           resolve(value)
@@ -132,10 +127,16 @@
     }
     
     static reject(reason) {
-      return new Promise((resolve, reject) => {
+      return new MyPromise((resolve, reject) => {
         reject (reason)
       })
     }
   }
 
-})(window)
+
+
+const p = new MyPromise((resolve, reject) => {
+  resolve(1)
+}).then(res => console.log(res), err => console.log(err))
+
+console.log(2)

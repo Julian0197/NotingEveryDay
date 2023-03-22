@@ -6,6 +6,7 @@ function fetch(index, type) {
       console.log(
         `[${index}] fetchOnly${type} end at: ${(Date.now() - now) / 1000}s`
       );
+      debugger
       resolve(index);
     }, (4 - index) * 1000);
   });
@@ -13,12 +14,15 @@ function fetch(index, type) {
 // fetch(1, "one");
 // fetch(2, "one");
 // fetch(3, "one");
-
+const queue = []
 // 场景一：同时只有一个在进行中的请求，一个结束后再进行下一个
 function fetchOnlyOne(index) {
+  queue.push(index)
   
 }
-fetch(1, "one").then(fetch(2, "one")).then(fetch(3, "one"));
+fetch(1, "one").then(() => fetch(2, "one")).then(() => fetch(3, "one"));
+// fetch(1, "one")
+// fetch(1, "one").then(console.log('aaa'))
 // fetchOnlyOne(1);
 // fetchOnlyOne(2);
 // fetchOnlyOne(3);
