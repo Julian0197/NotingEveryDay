@@ -1,7 +1,6 @@
 const PENDING = "pending";
 const RESOLVED = "resolved";
 const REJECTED = "rejected";
-
 class MyPromise {
   /**
    *
@@ -42,10 +41,10 @@ class MyPromise {
       // 一旦resolve执行，调用所有成功的回调函数
       // then中是微任务
       setTimeout(() => {
-        this.callbacks.forEach(callbacksObj => {
+        this.callbacks.forEach((callbacksObj) => {
           callbacksObj.onResolved(value);
-        })
-      })
+        });
+      });
     }
   }
 
@@ -60,10 +59,10 @@ class MyPromise {
     if (this.callbacks.length > 0) {
       // 一旦resolve执行，调用所有成功的回调函数
       setTimeout(() => {
-        this.callbacks.forEach(callbacksObj => {
+        this.callbacks.forEach((callbacksObj) => {
           callbacksObj.onRejected(reason);
-        })
-      })
+        });
+      });
     }
   }
 
@@ -90,6 +89,8 @@ class MyPromise {
        * @param {*} callback
        */
       function handle(callback) {
+        // console.log("aaaa");
+        // console.log(this);
         try {
           const result = callback(this.result);
           if (result instanceof MyPromise) {
@@ -103,36 +104,52 @@ class MyPromise {
           reject(error);
         }
       }
-
       if (this.status === PENDING) {
         // pending状态说明，执行器函数是异步任务，要保存回调函数
         this.callbacks.push({
-          onResolved: () => handle(onResolved),
-          onRejected: () => handle(onRejected)
-        })
+          onResolved: () => handle.call(this, onResolved),
+          onRejected: () => handle.call(this, onRejected),
+        });
       } else if (this.status === RESOLVED) {
         // then是微任务，用settimeout包裹
         setTimeout(() => {
-          handle(onResolved)
+          // console.log("-----");
+          // console.log(this);
+          // 直接调用handle，this为undefined
+          handle.call(this, onResolved);
         });
       } else {
         setTimeout(() => {
-          handle(onRejected)
+          handle.call(this, onRejected);
         });
       }
     });
-    
   }
 
   // catch直接执行reject
-  catch (onRejected) {
-    return this.then(undefined, onRejected)
+  catch(onRejected) {
+    return this.then(undefined, onRejected);
+  }
+
+  // Promise.all
+  all(arr) {
+    return new Promise((resolve, reject) => {
+      try {
+        const results = [] // 接受每个Promise返回的结果
+        let count = 0 // Promise的总数
+        let resolvedCount = 0 // 记录已完成的数量
+        for (const p of arr) {
+          // 要保证数组有序存放Promise的值
+        }
+      }
+    })
   }
 }
 
 const p = new MyPromise((resolve, reject) => {
-  resolve(1)
-}).then(res => console.log(res), err => console.log(err))
-
-console.log(2)
-
+  setTimeout(() => {
+    reject("error");
+  }, 1000);
+})
+// global.name = "node.js";
+// console.log(this);
