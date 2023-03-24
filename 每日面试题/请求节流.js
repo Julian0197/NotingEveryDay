@@ -6,32 +6,36 @@ function fetch(index, type) {
       console.log(
         `[${index}] fetchOnly${type} end at: ${(Date.now() - now) / 1000}s`
       );
-      debugger
       resolve(index);
     }, (4 - index) * 1000);
   });
 }
-// fetch(1, "one");
-// fetch(2, "one");
-// fetch(3, "one");
-const queue = []
+
 // 场景一：同时只有一个在进行中的请求，一个结束后再进行下一个
+const queue1 = [];
 function fetchOnlyOne(index) {
-  queue.push(index)
-  
+  if (queue1.length > 0) {
+    const request = queue1.pop();
+    queue1.push(request.then(() => fetch(index, "one")));
+  } else {
+    queue1.push(fetch(index, "one"));
+  }
 }
-fetch(1, "one").then(() => fetch(2, "one")).then(() => fetch(3, "one"));
-// fetch(1, "one")
-// fetch(1, "one").then(console.log('aaa'))
 // fetchOnlyOne(1);
 // fetchOnlyOne(2);
 // fetchOnlyOne(3);
 // fetchOnlyOne(4);
 
 // 场景二：假设同时可以有两个请求，要求在尽可能短的时间内完成所有请求该怎么办？
+// const callbackQueue = []
+// const requestQueue = []
 // function fetchOnlyTwo(index) {
-//     fetch(index, 'two')
+//   if (callbackQueue.length < 2) {
+//     callbackQueue.push(fetch(index, 'two'))
+//   }
 // }
-// fetchOnlyTwo(1)
-// fetchOnlyTwo(2)
-// fetchOnlyTwo(3)
+// fetchOnlyTwo(1);
+// fetchOnlyTwo(2);
+// fetchOnlyTwo(3);
+
+Promise.race([fetch(1, 'two'), fetch(2, 'two')]).then(() => Promise.race([fetch(3, 'two'), fetch(4, 'two')]))
