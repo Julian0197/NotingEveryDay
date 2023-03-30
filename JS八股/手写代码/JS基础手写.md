@@ -105,7 +105,18 @@ function debounce(callback, delay) {
 + 将变量timer定义为全局变量也可以达到防抖的目的，但是闭包有2个优势：
   + 不用担心全局变量污染问题
   + 多次调用，相互不影响。如果声明全局变量，每次声明需要不同的名字。
-
+## 4.2
+响应式防抖
+~~~js
+import { reactive, readonly } from "vue";
+function useDebounce(obj, duration) {
+  const valueOrigin = 
+  return {
+    value, // 这里是一个只读对象，响应式数据，默认值为参数值
+    setValue, // 这里是一个函数，传入一个新的对象，需要把新对象中的属性混合到原始对象中，混合操作需要在duration的时间中防抖
+  };
+}
+~~~
 ## 5.手写节流函数
 
 节流：**控制事件执行的时间间隔**，在函数需要频繁触发时，函数执行一次后，只有在大于这个时间间隔才会执行第二次。（窗口跳转，页面滚动，登录发送短信）
