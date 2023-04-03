@@ -107,10 +107,21 @@ function debounce(callback, delay) {
   + 多次调用，相互不影响。如果声明全局变量，每次声明需要不同的名字。
 ## 4.2
 响应式防抖
+确保在duration时间之内，只执行一次混合操作
 ~~~js
 import { reactive, readonly } from "vue";
 function useDebounce(obj, duration) {
-  const valueOrigin = 
+  const valueOrigin = reacctive(obj)
+  let timer = null
+  const setValue = (newObj) => {
+    if (timer) clearTimeout(timer)
+    timer = setTimeout(() => {
+        for (let key in newObj) {
+            valueOrigin[key] = newObj[key]
+        }
+    }, duration)
+    const value = readOnly(valueOrigin)
+  }
   return {
     value, // 这里是一个只读对象，响应式数据，默认值为参数值
     setValue, // 这里是一个函数，传入一个新的对象，需要把新对象中的属性混合到原始对象中，混合操作需要在duration的时间中防抖
@@ -582,7 +593,7 @@ function deepClone(target, map= new WeakMap()) {
     } else { // 基础数据类型，就直接返回
         return target
     }
-}]
+}
 ~~~
 
 WeakMap 中使用一个**对象作为键**。**引用对象为弱引用，没有其他对这个对象的引用 —— 该对象将会被从内存（和map）中自动清除**；强引用当其他对象存在对该对象的引用时，则需要手动删除该对象才行。
