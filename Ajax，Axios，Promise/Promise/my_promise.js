@@ -132,24 +132,98 @@ class MyPromise {
   }
 
   // Promise.all
-  all(arr) {
-    return new Promise((resolve, reject) => {
-      try {
-        const results = [] // 接受每个Promise返回的结果
-        let count = 0 // Promise的总数
-        let resolvedCount = 0 // 记录已完成的数量
-        for (const p of arr) {
-          // 要保证数组有序存放Promise的值
-        }
-      }
-    })
+  /**
+   *
+   * @param {Array} arr
+   * 传入数组，执行数组中的promise，只有个全部成功才返回成功的列表，否则返回失败的原因
+   * @returns
+   */
+  static all(arr) {
+    return new MyPromise((resolve, reject) => {
+      const results = []; // 接受每个Promise返回的结果
+      let count = 0; // Promise的总数
+      arr.forEach((p, index) => {
+        p.then((res) => {
+          results[index] = res;
+          count++;
+          if (count === arr.length) {
+            resolve(results);
+          }
+        }).catch((reason) => {
+          reject(reason);
+        });
+      });
+    });
+  }
+
+  /**
+   *
+   * @param {Array} arr promsie列表
+   * 和Promise.all不同，无论失败还是成功都会返回一个数组，数组中有状态和promise结果
+   */
+  static allSettled(arr) {
+    return new MyPromise((resolve, reject) => {
+      const results = [];
+      let count = 0;
+      arr.forEach((p, index) => {
+        p.then(
+          (res) => {
+            results[index] = { status: "resolved", value: res };
+            count++;
+            if (count === arr.length) {
+              resolve(results);
+            }
+          },
+          (reason) => {
+            results[index] = { status: "rejected", value: reason };
+            count++;
+            if (count === arr.length) {
+              resolve(results);
+            }
+          }
+        );
+      });
+    });
+  }
+
+  // 哪一个promise好了，就返回那个promise结果，终止其他的
+  static race(arr) {
+    return new MyPromise((resolve, reject) => {
+      arr.forEach((p) => {
+        p.then((value) => {
+          resolve(value)
+        }, (reason) => {
+          reject(reason)
+        });
+      });
+    });
   }
 }
 
-const p = new MyPromise((resolve, reject) => {
+const p1 = new MyPromise((resolve, reject) => {
   setTimeout(() => {
-    reject("error");
+    resolve("11");
+  }, 2000);
+});
+const p2 = new MyPromise((resolve, reject) => {
+  setTimeout(() => {
+    // reject("error");
+    resolve("22");
   }, 1000);
-})
+});
 // global.name = "node.js";
 // console.log(this);
+
+// const p = MyPromise.allSettled([p1, p2]);
+// setTimeout(() => {
+//   console.log(p.result);
+// }, 3000);
+// const p = MyPromise.allSettled([p1, p2]);
+// setTimeout(() => {
+//   console.log(p.result)
+// }, 3000);
+
+const pr = MyPromise.race([p1, p2]);
+setTimeout(() => {
+  console.log(pr.result);
+},3000);
