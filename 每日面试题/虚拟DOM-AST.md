@@ -11,4 +11,76 @@
 小量数据更新: 当页面的渲染数据高达几万条，但只需要修改某一条数据时，Virtual DOM的Diff比对算法，能够避免不必要的DOM操作，节省开销
 大量数据更新: 当页面的渲染数据高达几万条, 但是更新的数据却非常大，甚至全量更新，Virtual DOM无法进行优化, 加剧了性能的浪费
 
+### 浏览器的内部架构
+
+![img](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/51faeeccaeb644b79fcf8c5aaf541cb9~tplv-k3u1fbpfcp-zoom-in-crop-mark:4536:0:0:0.awebp)
+
+chrome浏览器采用多进程
+
++ 浏览器进程——
+
+### 重绘和回流
+
+**浏览器渲染流程**
+
+1. 渲染过程：HTML生成DOM树，CSS生成CSSOM树，
+2. 去除不可见元素后，结合生成渲染树
+3. 计算元素布局，渲染器线程遍历渲染树，创建绘制记录
+4. 若渲染树发生变化，浏览器会发生重绘和回流
+
+
+
+**重绘**
+
+某些元素外观被改变触发的浏览器行为（重新计算节点在屏幕中的绝对位置并渲染的过程），例如修改元素的填充颜色
+
+color，border-style,background...
+
+**回流**
+
+重新生成布局，重新排列元素（重新计算各节点和CSS具体的大小和位置，渲染树需要重新计算所有受影响的节点），例如修改元素的宽高
+
+页面初试渲染，添加删除可见dom元素，改变位置尺寸，改变字体大小，改变浏览器窗口尺寸，设置style属性的值,**查询某些属性或调用某些计算方法**
+
+**减少回流**
+
++ 样式要集中改变，不要一条条改变，可以动态添加class（只会引起一次回流）
+
++ DOM离线操作，如果遇到频繁操作dom的情况，可以先设置`renderEle.style.display = 'none';`，这样dom不在渲染树上修改不会引起回流重绘，等修改完毕再`renderEle.style.display = 'block'`
+
++ 读写分离，避免直接读取style，而是拿到那个对象
+
+  ~~~js
+    // javascript
+    const offsetWidth = '100px';
+    const renderEle = document.getElementById('demo');
+    renderEle.style.offsetWidth = offsetWidth // 导致重绘(写入)
+    const tempoOffsetWidth = renderEle； // 避免直接读取offsetWidth
+  ~~~
+
+### display:none visibility:hidden opacity:0 区别
+
+1. display：none
+
+   + 浏览器不会渲染，不占据空间
+   + 无法进行DOM事件监听
+   + 动态改变此属性会引起回流
+   + 不会被子元素继承
+2. visibilty：hidden
+
+   + 元素被隐藏，但是占据空间
+   + 无法监听DOM事件
+   + 会引起重绘
+   + 会被子元素继承，子元素可以设置 visibility: visible; 来取消隐藏
+3. opacity：0
+   + 透明度100%，元素隐藏，占据空间
+   + 可以进行DOM事件监听
+   + 提升为合成层，不会触发重绘，性能较高；
+   + 继 承：会被子元素继承,且，子元素并不能通过 opacity: 1 来取消隐藏；
+
+
 ### AST是啥
+
+抽象语法树是一种树形数据结构，每个节点代表代码中的一个语法结构
+
+vue在编译template时会先解析成ast，再将ast转化为渲染函数，用于渲染组件
