@@ -156,6 +156,10 @@ class MyPromise {
     });
   }
 
+  finally() {
+    
+  }
+
   /**
    *
    * @param {Array} arr promsie列表

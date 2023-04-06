@@ -4,8 +4,34 @@ git pull = git fetch + git merge
 ### git pull 和 git pull --rebase
 git pull包含一个--merge参数，两者的区别在于merge和rebase
 
-+ merge会创建一个新的commit，如果合并后有冲突需要解决冲突后重新commit
-+ rebase
+rebase冲突后执行git add和git rebase --continue
+merge冲突后执行git add git commit
+~~~js
+// master
+a <- b <- c
+// git pull 
+a <- b <- c
+
+~~~
+
+### git merge和git rebase
+<img src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/acd2a6eba9f04b1aa1f823765241f8f1~tplv-k3u1fbpfcp-zoom-in-crop-mark:4536:0:0:0.awebp" style="zoom: 100%;">
+
++ 当我们拉取公共分支最新代码的时候建议使用rebase，也就是git pull -r或git pull --rebase，但有个缺点就是 rebase 以后我就不知道我的当前分支最早是从哪个分支拉出来的了，因为基底变了嘛。（如果使用 merge ，多出无意义的一条提交记录）。
+
+#### git merge
+将test分支合并到master`git checkout master  git merge test`
+
+<img src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/03a1dcb7d79d4bc5b4e2d472526bc06e~tplv-k3u1fbpfcp-zoom-in-crop-mark:4536:0:0:0.awebp">
+
+找到两个分支的最近公共祖先，然后将两个分支的快照和祖先一起合并，合并的结果是一个新的快照
+
+#### git rebase
+将test分支合并到master`git checkout master  git rebase test`
+
+<img src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/1552dbc2a3434303af00151992ece1b0~tplv-k3u1fbpfcp-zoom-in-crop-mark:4536:0:0:0.awebp">
+
+git会从两个分支的最近公共祖先B开始，提取master分支上的修改（C，D）保存起来，再将master分支指向test分支最新提交的节点F，再把保存的C，D接到F后面，在这个过程当中，会删除原来的C,D commit 记录，生成新的C‘，D'，虽然C',D'和原来的C,Dcoommit的内容是一样的，但是 commit id 是不同的。
 
 ### 冲突
 + 我在没有git pull --rebase到最新代码的时候，还进行了开发，并且git push了当前修改，别人在pull会产生冲突。我来解决的话是不是：1.git pull --rebase拉取最新代码，此时有冲突，分支会从dev->空分支。 2.每处理完一次本地commit冲突，用git add标记冲突已处理完，用git rebase --continue继续处理下一个本地commit，也可以先用git rebase -i将本地的commit合并为一个commit，这样git pull --rebase就能一次处理所有的冲突
