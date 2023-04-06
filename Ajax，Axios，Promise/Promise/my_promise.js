@@ -131,6 +131,22 @@ class MyPromise {
     return this.then(undefined, onRejected);
   }
 
+  // finally相当于then，无论成功与否都会执行回调函数
+  // 理解：最后还是返回一个promise，但是这个promise的状态是由上一个promise的结果决定
+  // 和我们这个回调函数的执行没关系
+  finally(callback) {
+    return this.then(
+      (result) => {
+        callback();
+        return result;
+      },
+      (reason) => {
+        callback();
+        throw reason;
+      }
+    );
+  }
+
   // Promise.all
   /**
    *
@@ -194,27 +210,35 @@ class MyPromise {
   static race(arr) {
     return new MyPromise((resolve, reject) => {
       arr.forEach((p) => {
-        p.then((value) => {
-          resolve(value)
-        }, (reason) => {
-          reject(reason)
-        });
+        p.then(
+          (value) => {
+            resolve(value);
+          },
+          (reason) => {
+            reject(reason);
+          }
+        );
       });
     });
   }
 }
 
-const p1 = new MyPromise((resolve, reject) => {
-  setTimeout(() => {
-    resolve("11");
-  }, 2000);
-});
-const p2 = new MyPromise((resolve, reject) => {
-  setTimeout(() => {
-    // reject("error");
-    resolve("22");
-  }, 1000);
-});
+// const p1 = new MyPromise((resolve, reject) => {
+//   setTimeout(() => {
+//     resolve("11");
+//   }, 2000);
+// });
+
+// p1.then(() => {
+//   console.log(3)
+// })
+
+// const p2 = new MyPromise((resolve, reject) => {
+//   setTimeout(() => {
+//     // reject("error");
+//     resolve("22");
+//   }, 1000);
+// });
 // global.name = "node.js";
 // console.log(this);
 
@@ -227,7 +251,22 @@ const p2 = new MyPromise((resolve, reject) => {
 //   console.log(p.result)
 // }, 3000);
 
-const pr = MyPromise.race([p1, p2]);
+// const pr = MyPromise.race([p1, p2]);
+// setTimeout(() => {
+//   console.log(pr.result);
+// },3000);
+
+/******test finally*******/
+// 无论什么结果，都会运行
+const pro = new MyPromise((resolve, reject) => {
+  resolve(1);
+});
+const pro2 = pro.finally((d) => {
+  console.log("finally", d); // 收不到d参数
+  // 本身不改变状态，但是抛出一个错误，数据就会变成它的错误
+  // throw 123;
+  return 123; //不起作用
+});
 setTimeout(() => {
-  console.log(pr.result);
-},3000);
+  console.log(pro2); // 1 resolve
+});
