@@ -111,7 +111,7 @@ function debounce(callback, delay) {
 ~~~js
 import { reactive, readonly } from "vue";
 function useDebounce(obj, duration) {
-  const valueOrigin = reacctive(obj)
+  const valueOrigin = reactive(obj)
   let timer = null
   const setValue = (newObj) => {
     if (timer) clearTimeout(timer)
