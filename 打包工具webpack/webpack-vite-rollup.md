@@ -18,6 +18,5 @@
 1. vite直接启动开发服务器，请求哪一个模块再对该模块实时编译。依赖浏览器，现代浏览器支持ES Module，会自动向依赖的Module发送请求。而webpack需要把所有文件打包到bundle.js，再启动开发服务器。
    + ESM中，模块加载是异步的。ESM的import是静态解析的，在编译期间就确定了模块的依赖关系，可以更好的实现按需加载。
    + CJS中，模块加载是同步的，require在模块加载时立即执行，所以需要把模块全部打包成单独文件，才能在浏览器中执行。同执行会阻塞，而且CJS中require是运行时加载，编译期间无法确定模块依赖关系。
-2. 
 3. vite基于vite是基于esbulid预构建依赖（go编写），webpack基于node。go，webpack基于javascript。go是编译语言，编译阶段就将源码转化为机器码。javascript需要解释器调度执行。go是多线程，js单线程。
 4. webpack处理代码：字符串形式读入源码 => 借助babel-loader转化为AST => babel再解析成低版本AST => 低版本AST生成低版本源码（字符串形式）=> 打包成为最终产物。在ast和string之间来回转化，效率低。而Esbuild 重写包括 js、ts、jsx、css 等语言在内的转译工具，所以它更能保证源代码在编译步骤之间的结构一致性，在多个编译阶段共用相似的AST，节省内存。
