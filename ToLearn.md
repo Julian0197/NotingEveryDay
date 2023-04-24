@@ -1,14 +1,11 @@
-网络
 
-- [x] websocket
+
 - [ ] Http1.0 1.1 2 3
-- [ ] httphttps
-- [ ] 排序（冒泡，归并，快速，插入)
 - [ ] 浏览器渲染流程
 - [ ] 重绘回流
 - [ ] vue2vue3使用上区别，性能区别
-- [ ] yarn，npm，pnpm
-- [x] letconstvar
+- [ ] 华为两道题目
+- [ ] 图
 
 ---
 
