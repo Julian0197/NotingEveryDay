@@ -239,3 +239,54 @@ rl.on('line', function(line) {
 })
 ~~~
 
+#### 钥匙和房间
+
+解法1：dfs，深度优先
+
+~~~js
+var canVisitAllRooms = function(rooms) {
+    const dfs = (key, rooms, visited) => {
+        if (visited[key]) return
+        visited[key] = true
+        for (const k of rooms[key]) {
+            dfs(k, rooms, visited)
+        }
+    }
+    const visited = new Array(rooms.length).fill(false)
+    dfs(0, rooms, visited)
+    console.log(visited)
+    for (let i of visited) {
+        if (!i) {
+            return false
+        }
+    }
+    return true
+};
+~~~
+
+解法2：BFS，有向图
+
+~~~js
+var canVisitAllRooms = function(rooms) {
+    const bfs = rooms => {
+        const visited = new Array(rooms.length).fill(0)
+        visited[0] = 1
+        let queue = []
+        queue.push(0)
+        while (queue.length > 0) {
+            let key = queue.shift()
+            for (let k of rooms[key]) {
+                if (!visited[k]) {
+                    queue.push(k)
+                    visited[k] = 1
+                }
+            }
+        }
+        for (let i of visited) {
+            if (i === 0) return false
+        }
+        return true
+    }
+    return bfs(rooms)
+};
+~~~
