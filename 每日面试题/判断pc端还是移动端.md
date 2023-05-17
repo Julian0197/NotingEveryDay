@@ -1,4 +1,4 @@
-#### 使用`navigator.userAgent`
+#### 1.使用`navigator.userAgent`
 
 ~~~js
 isMobile() {
@@ -11,7 +11,7 @@ isMobile() {
 + userAgent属性是一个只读的字符串，声明了**浏览器用于HTTP请求的用户代理头的值**。
 + 再利用正则表达式，match方法判断。
 
-#### 媒体查询`window.matchMedia`
+#### 2.媒体查询`window.matchMedia`
 
 ~~~js
 var isMobile = window.matchMedia("(max-width: 480px)").matches // true | false

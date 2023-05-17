@@ -1,52 +1,59 @@
-## v-model原理
+### v-model原理
 
-**（1）作用在表单元素上** 动态绑定了input的value指向了message变量，当触发input事件会动态地把message设置为value。
+#### 作用在自定义组件上
 
-~~~vue
-<input v-model='sth'/>
-//  等同于
-<input
-	v-bind:value = "sth"
-    v-on:input="sth=$event.target.value"
->
-// $event指当前触发的事件对象
-// $event.target 指当前触发的事件对象的DOM
-// $event.target.value 就是当前dom的value值;
-
+生成一个`modelValue`属性和`onUpdate:modelValue`事件
+~~~html
+<Son v-model="data"></Son>
 ~~~
 
-**（2）作用在组件上** 在自定义组件中，v-model 默认会利用名为 value 的 prop和名为 input 的事件
+在子组件中
 
-**本质是一个父子组件通信的语法糖，通过prop和$.emit实现。**
-
-~~~vue
-<custom-input v-model="searchText">
-// 相当于
-<custom-input
-  v-bind:value="searchText"
-  v-on:input="searchText = $event"           
-></custom-input>
-// $event就是子组件中派发input事件传递的数据
+~~~js
+// 声明，接受数据和方法
+const props =  defineProps({
+    modelValue: Object
+  })
+const emits = defineEmits(['update:modelValue']) 
+// 调用
+const change = (val) => emits('update:modelValue', val)
 ~~~
 
-+ 父组件将`searchText`变量传入子组件custom-input，使用的prop名为`value`
-+ 父组件监听`input`事件，子组件中通过`$emit`派发input事件并传递值，父组件将接收到的值赋给`searchText`
-
-custom-input组件：
-
-~~~vue
-Vue.component('custom-input', {
-  props: ['value'],
+**从原理上分析**
+首先注册了一个自定义组件，内部使用了原生input，并通过v-model绑定父组件传过来的value。props不能直接作为原生input的v-model值，因为prop不能直接修改。在计算属性中使用getter取值。
+~~~js
+app.component("custom-input", {
+  props: ["modelValue"],
   template: `
-    <input
-      v-bind:value="value"
-      v-on:input="$emit('input', $event.target.value)"
-    >
-  `
-})
+    <input v-model="value">
+  `,
+  computed: {
+    value: {
+      get() {
+        return this.modelValue;
+      },
+      set(value) {
+        this.$emit("update:modelValue", value);
+      },
+    },
+  },
+});
 ~~~
 
-## data为什么是一个函数而不是对象
+### v-if、v-for、v-show
+
+#### v-if和v-show区别
+
++ v-if是动态地向DOM树添加或删除DOM元素，v-show是通过css的display样式控制显示隐藏
++ v-if是惰性的，如果初始条件为假，则什么也不做，只有在条件第一次变为真时才开始局部编译， v-show是在任何条件下都被编译，然后被缓存，而且DOM元素保留。
++ v-if有更高的切换消耗，适合不经常改变的情况。v-show有更高的初始消耗，适合频繁切换的场景。
+
+#### v-for和v-if不能一起连用
+
+v-for优先级更高，不能在同一子元素使用，需要条件渲染，将v-if放到子元素中。
+
+
+### data为什么是一个函数而不是对象
 
 JS中对象是引用类型数据，当多个实例引用同一个对象，只要一个实例对这个对象进行操作，其他实例中的数据也会发生变化。
 
