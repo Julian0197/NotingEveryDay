@@ -20,14 +20,14 @@ a <- b <- c
 + 当我们拉取公共分支最新代码的时候建议使用rebase，也就是git pull -r或git pull --rebase，但有个缺点就是 rebase 以后我就不知道我的当前分支最早是从哪个分支拉出来的了，因为基底变了嘛。（如果使用 merge ，多出无意义的一条提交记录）。
 
 #### git merge
-将test分支合并到master`git checkout master  git merge test`
+将test分支合并到master  `git checkout master  git merge test`
 
 <img src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/03a1dcb7d79d4bc5b4e2d472526bc06e~tplv-k3u1fbpfcp-zoom-in-crop-mark:4536:0:0:0.awebp">
 
 找到两个分支的最近公共祖先，然后将两个分支的快照和祖先一起合并，合并的结果是一个新的快照
 
 #### git rebase
-将test分支合并到master`git checkout master  git rebase test`
+将test分支合并到master  `git checkout master  git rebase test`
 
 <img src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/1552dbc2a3434303af00151992ece1b0~tplv-k3u1fbpfcp-zoom-in-crop-mark:4536:0:0:0.awebp">
 
@@ -51,14 +51,13 @@ git会从两个分支的最近公共祖先B开始，提取master分支上的修�
 ~~~css
           A---B---C feat
          /         
-    D---E---F---G---H master
+    D---E master
 
 ~~~
-使用 git merge feat 命令合并 feat 分支后，由于 master 分支可以直接“快进”（fast-forward）到 feat 分支的最新提交 C，因此 Git 不会创建新的合并提交对象，而是直接将 master 分支指向 C。此时，提交历史变成了：
+使用 git merge feat 命令合并 feat 分支后，由于 master 分支可以直接“快进”（fast-forward）到 feat 分支的最新提交 C(master分支和feature根节点相同)，因此 Git 不会创建新的合并提交对象，而是直接将 master 分支指向 C。此时，提交历史变成了：
 ~~~css
-          A---B---C feat
-                     \
-    D---E---F---G---H---C' (master)
+                    
+    D---E---A---B---C (master)
 
 ~~~
 这里的 C' 是由 git merge 创建的一个新提交对象，它包含了 feat 分支和 master 分支的提交内容。
