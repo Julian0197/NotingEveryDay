@@ -72,6 +72,8 @@ git会从两个分支的最近公共祖先B开始，提取master分支上的修�
 
 总结：两者区别在于，普通的merge，很难区分哪些提交来自 master 分支，哪些来自 feat 分支。因此，在需要保留分支历史的情况下，使用 --no-ff 选项合并分支会更加有用。
 
+<img src="https://segmentfault.com/img/bVkJAj">
+
 ### git rebase 和 git revert
 
 + git revert会产生一条commit，是删除回撤代码的提交，你可以删除指定的代码
