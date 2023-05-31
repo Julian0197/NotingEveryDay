@@ -607,3 +607,49 @@ WeakMap 的主要优点是它们对对象是弱引用，被它们引用的对象
 <img src="C:\Users\MSK\AppData\Roaming\Typora\typora-user-images\image-20221112141836131.png" alt="image-20221112141836131" style="zoom: 50%;" />
 
 <img src="C:\Users\MSK\AppData\Roaming\Typora\typora-user-images\image-20221112141901007.png" alt="image-20221112141901007" style="zoom: 50%;" />
+
+## 手写 `getElementByClassName`
+
+1. 深度优先遍历整颗DOM树，遍历过程中将满足类名的元素收集起来。
+
+~~~js
+function getElementByClassNameDFS(className) {
+    let res = []
+    // 获取DOM元素中所有的
+    const dom = document.getElementsByTagName('*')
+
+    function dfs(el) {
+       if (el.classList && el.classList.contains(className)) {
+        res.push(el)
+       } 
+       for (let i = 0; i < el.children.length; i++) {
+            dfs(el.children[i])
+        }
+    }
+    for (let i = 0; i < dom.length; i++) {
+        dfs(dom[i])
+    }
+    return res
+}
+~~~
+
+2. 广度优先遍历整颗DOM树，遍历过程中将满足类名的元素收集起来。
+
+~~~js
+function getElementByClassNameBFS(className) {
+    let res = []
+    let queue = []
+    const dom = document.getElementsByTagName('*')
+    queue.push(...dom)
+    while (queue.length > 0) {
+        const cur = queue.shift()
+        if (cur.classList && cur.classList.contains(className)) {
+            res.push(cur)
+        }
+        for (let i = 0; i < cur.children.length; i++) {
+            queue.push(cur.children[i])
+        }
+    }
+    return res
+}
+~~~
