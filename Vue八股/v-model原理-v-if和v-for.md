@@ -44,7 +44,7 @@ app.component("custom-input", {
 
 #### v-if和v-show区别
 
-+ v-if是动态地向DOM树添加或删除DOM元素，v-show是通过css的display样式控制显示隐藏
++ v-if是动态地向DOM树添加或删除DOM元素，v-show是通过css的`display:none`样式控制显示隐藏
 + v-if是惰性的，如果初始条件为假，则什么也不做，只有在条件第一次变为真时才开始局部编译， v-show是在任何条件下都被编译，然后被缓存，而且DOM元素保留。
 + v-if有更高的切换消耗，适合不经常改变的情况。v-show有更高的初始消耗，适合频繁切换的场景。
 

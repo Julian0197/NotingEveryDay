@@ -74,7 +74,14 @@ git会从两个分支的最近公共祖先B开始，提取master分支上的修�
 
 <img src="https://segmentfault.com/img/bVkJAj">
 
-### git rebase 和 git revert
+### git reset 和 git revert
 
 + git revert会产生一条commit，是删除回撤代码的提交，你可以删除指定的代码
 + git reset之前删除了之前的commit，回退到你选择的版本，中间所有的记录都被删除了
+
+
+### git cherry-pick
+
+使用场景：合并单个提交：
++ 选择性地将某个分支的某个提交应用到当前分支，会产生一个提交记录
++ 修复错误：若某个错误只存在于某个提交中，可以使用git cherry-pick将该提交应用到修复错误的分支hotfix分支，没问题了再同步到release。
