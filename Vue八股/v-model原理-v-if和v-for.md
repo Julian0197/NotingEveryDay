@@ -1,5 +1,78 @@
 ### v-model原理
 
+vue的响应式原理只实现了从数据层到dom层的单向绑定（渲染函数作为响应式数据的依赖会被收集），v-model实现了双向绑定达到操作DOM也能改变数据。
+
+#### 前置知识`withDirectives`
+
+vue3提供的全局API，允许将指令应用于vnode，返回一个包含应用指令的vnode。
+
+指令：以v-开头的关键字，v-model，v-if，这些是内置的指令。vue3允许通过directives自定义指令（全局或者组件内）：
+
+~~~js
+let app = createApp(App)
+app.directive('highlight', {
+beforeMount(el, binding, vnode) {
+el.style.background = binding.value
+}
+})
+~~~
+
+- 第一个参数：一个虚拟节点，通常使用 `h()` 创建
+- 第二个参数：一个指令数组，每个指令本身都是一个数组，最多可以定义 4 个索引。
+
+~~~js
+import { withDirectives, resolveDirective } from 'vue'
+const foo = resolveDirective('foo')
+const bar = resolveDirective('bar')
+
+return withDirectives(h('div'), [
+  [foo, this.x],
+  [bar, this.y]
+])
+~~~
+
+#### 作用在input表单上
+
+`<input v-model="searchText"/>`
+
+上述代码编译成render函数：
+
+~~~js
+import {
+  vModelText as _vModelText,
+  createVNode as _createVNode,
+  withDirectives as _withDirectives,
+  openBlock as _openBlock,
+  createBlock as _createBlock,
+} from "vue";
+export function render(_ctx, _cache, $props, $setup, $data, $options) {
+  return _withDirectives(
+    (_openBlock(),
+    _createBlock(
+      "input",
+      {
+        "onUpdate:modelValue": ($event) => (_ctx.searchText = $event),
+      },
+      null,
+      8 /* PROPS */,
+      ["onUpdate:modelValue"]
+    )),
+    [[_vModelText, _ctx.searchText]]
+  );
+}
+~~~
+
+withDirective的第一个参数是vnode，额外传递了一个prop参数` "onUpdate:modelValue": ($event) => (_ctx.searchText = $event)`；第二个参数添加了vModelText 指令。
+
+下面是 vModelText 的实现：
+
+~~~js
+
+
+~~~
+
+
+
 #### 作用在自定义组件上
 
 生成一个`modelValue`属性和`onUpdate:modelValue`事件
