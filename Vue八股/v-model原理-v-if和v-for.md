@@ -123,25 +123,8 @@ function onCompositionEnd(e) {
 
 ### 作用在自定义组件上
 
-生成一个`modelValue`属性和`onUpdate:modelValue`事件
-~~~html
-<Son v-model="data"></Son>
-~~~
+下面是案例，定义了一个custom-input自定义组件，并使用v-model给传递数据。组件内部有一个input输入框，使用v-model绑定父组件传递过来的props。因为props不可直接更改，所以使用计算属性，当改变input框的值时，派发一个自定义事件 update:modelValue，修改父组件传入的数据。
 
-在子组件中
-
-~~~js
-// 声明，接受数据和方法
-const props =  defineProps({
-    modelValue: Object
-  })
-const emits = defineEmits(['update:modelValue']) 
-// 调用
-const change = (val) => emits('update:modelValue', val)
-~~~
-
-**从原理上分析**
-首先注册了一个自定义组件，内部使用了原生input，并通过v-model绑定父组件传过来的value。props不能直接作为原生input的v-model值，因为prop不能直接修改。在计算属性中使用getter取值。
 ~~~js
 app.component("custom-input", {
   props: ["modelValue"],
@@ -161,22 +144,129 @@ app.component("custom-input", {
 });
 ~~~
 
-## v-if、v-for、v-show
+接下来我们可以在其他地方使用这个组件：`<custom-input v-model="searchText" />`
 
-### v-if和v-show区别
+模板编译后生成的render函数是：
+~~~js
+import {
+  resolveComponent as _resolveComponent,
+  createVNode as _createVNode,
+  openBlock as _openBlock,
+  createBlock as _createBlock,
+} from "vue";
+export function render(_ctx, _cache, $props, $setup, $data, $options) {
+  const _component_custom_input = _resolveComponent("custom-input");
+  return (
+    _openBlock(),
+    _createBlock(
+      _component_custom_input,
+      {
+        modelValue: _ctx.searchText,
+        "onUpdate:modelValue": ($event) => (_ctx.searchText = $event),
+      },
+      null,
+      8 /* PROPS */,
+      ["modelValue", "onUpdate:modelValue"]
+    )
+  );
+}
+~~~
 
-+ v-if是动态地向DOM树添加或删除DOM元素，v-show是通过css的`display:none`样式控制显示隐藏
-+ v-if是惰性的，如果初始条件为假，则什么也不做，只有在条件第一次变为真时才开始局部编译， v-show是在任何条件下都被编译，然后被缓存，而且DOM元素保留。（这里局部编译可以理解为生成vnode）
-+ v-if有更高的切换消耗，适合不经常改变的情况。v-show有更高的初始消耗，适合频繁切换的场景。
+编译结果中，并没有用withDirective包裹。对示例稍作修改：
+`<custom-input :modelValue="searchText" @update:modelValue="$event=>{searchText = $event}"/>`
 
-### v-for和v-if不能一起连用
+~~~js
+import {
+  resolveComponent as _resolveComponent,
+  createVNode as _createVNode,
+  openBlock as _openBlock,
+  createBlock as _createBlock,
+} from "vue";
+export function render(_ctx, _cache, $props, $setup, $data, $options) {
+  const _component_custom_input = _resolveComponent("custom-input");
+  return (
+    _openBlock(),
+    _createBlock(
+      _component_custom_input,
+      {
+        modelValue: _ctx.searchText,
+        "onUpdate:modelValue": ($event) => {
+          _ctx.searchText = $event;
+        },
+      },
+      null,
+      8 /* PROPS */,
+      ["modelValue", "onUpdate:modelValue"]
+    )
+  );
+}
+~~~
 
-v-for优先级更高，不能在同一子元素使用，需要条件渲染，将v-if放到子元素中。
+v-model作用于组件本质是一个语法糖：往组件传入一个modelValue的prop，并监听一个名为update:modelValue的自定义事件。
 
+所以在子组件内，定义一个名字为modelValue的prop，然后在数据改变的时候派发update:modelValue事件，事件的回调函数接受一个参数，执行的时候会把参数 $event 赋值给数据 data。
 
-## data为什么是一个函数而不是对象
+**vue2和vue3 v-model 的差异:**
 
-JS中对象是引用类型数据，当多个实例引用同一个对象，只要一个实例对这个对象进行操作，其他实例中的数据也会发生变化。
+vue2中自定义组件只可以使用一次v-model，如果需要绑定多个属性，需要手动在子组件中通过props和emit来实现。vue3中一个组件可以使用多次，支持传参数：
+`<custom-input v-model:text="searchText"/>`
 
-所以组件中的data写成函数形式，数据以函数返回值形式定义，这样每次复用组件，就会返回一个新的data，也就是每个组件都能有自己的空间，各自维护自己的数据不会干扰其他组件运行。
+~~~js
+import {
+  resolveComponent as _resolveComponent,
+  createVNode as _createVNode,
+  openBlock as _openBlock,
+  createBlock as _createBlock,
+} from "vue";
+export function render(_ctx, _cache, $props, $setup, $data, $options) {
+  const _component_custom_input = _resolveComponent("custom-input");
+  return (
+    _openBlock(),
+    _createBlock(
+      _component_custom_input,
+      {
+        text: _ctx.searchText,
+        "onUpdate:text": ($event) => (_ctx.searchText = $event),
+      },
+      null,
+      8 /* PROPS */,
+      ["text", "onUpdate:text"]
+    )
+  );
+}
+~~~
 
+### 自定义事件派发
+
+看一下派发事件函数，emit的实现
+
+~~~js
+function emit(instance, event, ...args) {
+  const props = instance.vnode.props || EMPTY_OBJ;
+  let handlerName = `on${capitalize(event)}`;
+  let handler = props[handlerName];
+
+  if (!handler && event.startsWith("update:")) {
+    handlerName = `on${capitalize(hyphenate(event))}`;
+    handler = props[handlerName];
+  }
+  if (handler) {
+    callWithAsyncErrorHandling(
+      handler,
+      instance,
+      6 /* COMPONENT_EVENT_HANDLER */,
+      args
+    );
+  }
+}
+~~~
+
+emit 方法支持 3 个参数，第一个参数 instance 是组件的实例，也就是执行 $emit 方法的组件实例，第二个参数 event 是自定义事件名称，第三个参数 args 是事件传递的参数。
+
+emit 方法首先获取事件名称，把传递的 event 首字母大写，然后前面加上 on 字符串，比如我们前面派发的 update:modelValue 事件名称，处理后就变成了 onUpdate:modelValue。
+
+接下来，通过这个事件名称，从 props 中根据事件名找到对应的 prop 值，作为事件的回调函数。
+
+如果找不到对应的 prop 并且 event 是以 update: 开头的，则尝试把 event 名先转成连字符形式然后再处理。
+
+找到回调函数 handler 后，再去执行这个回调函数，并且把参数 args 传入。针对 v-model 场景，这个回调函数就是拿到子组件回传的数据然后修改父元素传入到子组件的 prop 数据，这样就达到了数据双向通讯的目的。
