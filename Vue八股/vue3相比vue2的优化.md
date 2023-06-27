@@ -90,10 +90,6 @@ node_modules
 <img src="https://p6-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/359e5ed35b754b64b82c2dd0b1b8d364~tplv-k3u1fbpfcp-zoom-in-crop-mark:1512:0:0:0.awebp?">
 
 
-
-
-
-
 ### 1.2 拥抱ts
 
 类型语言有利于代码的维护，可以在编码期间做类型检测，避免因类型问题导致的错误。
