@@ -50,7 +50,7 @@ pnpm的p指的是performant，高性能体现在：快速，节省磁盘空间�
 pnpm依赖**包扁平化管理原则**:
 1. 全局store：
 在根目录下的`node_modules`下创建一个`.pnpm`名称的目录，把项目中所有的依赖都安装到里面，形成一个`包名 + 内部依赖 +  版本信息`的目录。
-比如在pnpmp下俺咋混个了`express`的依赖：
+比如在pnpmp下安装了`express`的依赖：
 ~~~bash
 node_modules/express/...
 node_modules/.pnpm/express@4.17.1/node_modules/xxx
