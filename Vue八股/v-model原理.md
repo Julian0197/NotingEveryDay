@@ -115,9 +115,9 @@ function onCompositionEnd(e) {
 
 2. trim修饰符
 
-触发input或者change时会手动调用trim去除收尾空格，还会额外监听 change 事件执行 el.value.trim() 把 DOM 的值的首尾空格去除。
+触发input或者change时会手动调用trim去除的尾空格，还会额外监听 change 事件执行 el.value.trim() 把 DOM 的值的首尾空格去除。
 
-3. number修饰符
+1. number修饰符
 
 如果配置了 number 修饰符，或者 input 的 type 是 number，就会把 DOM 的值转成 number 类型后再赋值给数据。
 
