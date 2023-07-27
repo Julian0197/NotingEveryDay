@@ -1,5 +1,37 @@
 # ModelBase源码有感
 
+## 初衷
+
+一行代码解决前端处理数据的痛苦：
+
++ 后端数据规范是下划线风格，需要前端转化为驼峰
++ 代码的静态类型检查需求，基于typescript
++ vue2的响应式丢失问题，如果不提前定义好一个对象的key，这个对象将不是响应式的（除非通过`vue.set`）,如果提前定义好key（一个model可能几十个key），一个对象又可能在多个页面出现，存在大量重复劳动（vue3 的composition api倒可以解决这个问题）
++ 提交数据有时候需要全量提交，有时候需要增量提交；改了很多数据，想恢复到默认状态；对数据的一些初始化操作等等，常用的功能都封装在ModelBase里面
+
+## 基本概念
+
++ ModelBase实例：自定义class继承ModelBase后，通过new创建的实例，该实例具有ModelBase原型所有的方法。
+
++ input流向数据
+  - 一般指后端返回给前端的数据，在ModelBase里面指的是new ModelBase(input)。
++ output流向数据
+  - 一般指的是前端提交给后端，在ModelBase里面指的是调用getChangedData、getSerializableObject、
+  - 、getCleanSerializableObject、getCleanSerializableString、getChangedDescriptor等方法获取的数据。
+  - 比较理想的状态是input和output的key是一模一样，他们和ModelBase的key的关系仅仅是下划线和驼峰的关系。
++ 数据状态：目前只有一种saved状态。我们简单理解它，currentData和oldData（saved状态的值）
+  - 实例创建后currentData和oldData相等。
+  - 修改currentData，会造成和oldData不相等。
+  - 调用saveChangedData()，currentData和oldData又相等。
+
++ ##### 通过metadata存储saved的值：元数据不是可枚举属性，无法通过`Object.keys`获取。
+
++ 处理好的元数据通过WeakMap获取，`modelColumnsMap.set(t_.constructor, columns_)`，一是为了防止重复调用逻辑每次`new`都要获取一遍元数据（存在继承的情况，这段逻辑会比较复杂），二是考虑到很多动态模型创建好后会被释放掉。而普通的`map`对象会让 `modelColumnsMap` 越来越大
+
+---
+
+作为一名前端实习生，在使用过ModelBase并调试源码后得到的一些感想...
+
 涉及到以下知识点：
 
 + monorepo架构
@@ -1075,7 +1107,9 @@ export class CoreService {
 
 #### request响应函数
 
-apiData存取后端的响应数据。如果配置了`beforeParse`，会调用该函数对原始的响应数据出炉。
++ apiData存取后端的响应数据。如果配置了`beforeParse`，会调用该函数对原始的响应数据出炉。
++ beforeParse后，通过new ServiceResponse让后端返回的数据按照定义好的model返回。
++ 按照wrapper初始化data后，执行afterparse的逻辑，此时后端数据中的下划线风格命名已经被转化为前端规范下的驼峰格式，并按照定义的元数据初始化。
 
 
 ~~~ts
@@ -1109,44 +1143,87 @@ public async request<T extends any>(url: string, param?: IServiceParamRequest<T>
   }
 ~~~
 
----
-
-ToDo：写一个函数判断传入的dto是否符合class中定义的数据。
+#### ServiceResponse
 
 ~~~ts
-class MyClass {
-  key1: number;
-  key2: string;
-  key3: boolean;
+export class ServiceResponse<T = any> extends ModelBase {
+  @Column()
+  public requestId!: string
 
-  checkKeys(obj: any): boolean {
-    const objKeys = Object.keys(obj) as Array<keyof typeof obj>;
-    con st classKeys = Object.keys(this) as Array<keyof typeof this>;
-    
-    if (objKeys.length !== classKeys.length) {
-      return false;
-    }
+  @Column()
+  public resultCode!: string
 
-    for (let i = 0; i < objKeys.length; i++) {
-      if (!classKeys.includes(objKeys[i])) {
-        return false;
+  @Column()
+  public message!: string
+
+  @Column({ name: 'data', aliasName: 'resultData' })
+  public data!: T
+
+  constructor(
+    dto?: any,
+    wrapper?:
+      DataWrapper |
+      (new(dto: any) => T) |
+      T[],
+  ) {
+    super(dto)
+
+    if (wrapper) {
+      // 对各种类型的wrapper处理
+      // ...省略
+      // 对于流数据特殊处理
+      } else if ((wrapper as any).getClassName && (wrapper as any).getClassName() === DataStreamWrapper.className) {
+        // content-type 不存在或者 不包含 application/json，则按照 blob的处理方式处理。
+        if (!dto?.headers?.['content-type'] || dto?.headers?.['content-type']?.indexOf('application/json') === -1) {
+          // stream默认是没有data属性，dto需要设置到data上
+          this.data = dto
+          if (this.data) {
+            this.data = (wrapper as DataWrapper).getData(this.data) as any
+            this.resultCode = this.resultCode || 'success'
+          } else {
+            this.resultCode = 'stream_is_empty'
+          }
+        }
+      } else {
+        const classType = wrapper as any
+        if (classType) {
+          this.data = new classType(dto && dto.data)
+        }
+        // }
       }
     }
+  }
 
-    return true;
+  public isValid(){
+    return this.resultCode === 'success'
   }
 }
 
-const myObj = {
-  key1: 123,
-  key2: "hello",
-};
-
-const myInstance = new MyClass();
-console.log(myInstance.checkKeys(myObj));  // Output: true
 ~~~
 
-在上面的示例中，我们定义了一个`MyClass`类，其中包含了三个类属性`key1`、`key2`和`key3`。然后，我们定义了一个`checkKeys`方法，该方法接受一个`obj`参数，并在内部使用`keyof`关键字获取传入对象的所有键，并将其与类的属性进行比较。
+---
+
+### 判断传入的dto是否属于元数据中定义的key
+
+ToDo：写一个实例方法，传入dto数据判断dto对象的键名是否extends，columnData的key
+
+~~~ts
+class ModelBase {
+  public checkDtoKeys(dto: Record<string, any>): boolean {
+    const t_ = toRaw(this)
+    const keys = Object.keys(dto)
+    for (const key of keys) {
+      const columnData: Record<string, any> = Reflect.getOwnMetadata(LOCA_COLUMN_KEY, t_.constructor.prototype)
+      if (!(key in columnData)) {
+        console.log(`${key} extends columnData's key`)
+        return false
+      }
+    }
+    console.log('all keys extends columnData\'s key')
+    return true
+  }
+}
+~~~
 
 
 
