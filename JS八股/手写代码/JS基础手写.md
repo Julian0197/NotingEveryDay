@@ -653,3 +653,19 @@ function getElementByClassNameBFS(className) {
     return res
 }
 ~~~
+
+## 正则校验三段式版本号
+
+~~~ts
+const validatePkgVersion = (rule: any, value: any, callback: any) => {
+  const regText = /^(\d+\.){2}\d+$/
+  if (regText.test(value)) return callback()
+  callback(new Error('请输入正确的版本号'))
+}
+~~~
+
++ `^`：匹配字符串的开头
++ `\d`：匹配一个数字母
++ `(\d+\.)`：匹配数字.
++ `{2}`：前面的元素必须出现两次
++ `$`：匹配字符串的结尾。
