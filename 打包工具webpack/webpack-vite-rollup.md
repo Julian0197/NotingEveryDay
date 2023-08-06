@@ -26,3 +26,28 @@
 模块化：过去使用script标签引入多个js文件，容易造成变量污染和命名冲突。模块化将代码分隔，每个模块都有自己的作用域和命名空间
 
 打包：将各个模块的代码合并成一个文件，让页面加载速度更快，减少http请求。
+
+### webpack plugin的原理
+
+核心机制：基于 `tapable` 产生的**发布订阅者模式**，在不同的周期触发不同的 `Hook` 从而影响最终的打包结果。
+
+tapable是一个基于发布订阅模式的插件架构库，它提供了一套用于创建和处理钩子的API。通过使用tapable，开发者可以定义自己的钩子（Hook），并在不同的生命周期阶段触发这些钩子，实现自定义的插件功能。
+
+在Webpack中，有许多常用的插件可用于扩展或修改Webpack的打包行为，一些常见的插件包括：
+
+1. HtmlWebpackPlugin：用于生成HTML文件，并自动将打包后的脚本文件引入HTML中。
+2. CleanWebpackPlugin：用于在每次构建前清理输出目录。
+3. MiniCssExtractPlugin：用于将CSS从打包的JavaScript文件中提取出来，生成单独的CSS文件。
+4. DefinePlugin：用于定义全局常量，可以在代码中直接使用这些常量。
+5. CopyWebpackPlugin：用于将文件或文件夹复制到构建目录中。
+6. UglifyJsPlugin：用于压缩和混淆JavaScript代码。
+7. HotModuleReplacementPlugin：用于在开发环境中实现热模块替换，允许在运行时更新模块，而无需完全刷新页面。
+
+比如：HotModuleReplacementPlugin在Webpack的构建过程中的`compilation`阶段进行操作。在这个阶段，它会监听文件的变化，并在文件发生变化时触发热更新。
+
+当文件发生变化时，HotModuleReplacementPlugin会通过WebSocket与Webpack Dev Server建立连接，将变化的模块信息发送给Webpack Dev Server。Webpack Dev Server会根据这些信息，通过热替换的方式，将变化的模块替换到运行中的应用程序中，而不需要完全刷新页面。
+
+又比如：在`emit`阶段，HtmlWebpackPlugin会监听Webpack的构建结果，获取打包后的文件信息。然后，它会根据配置的模板文件和打包后的文件信息，生成一个新的HTML文件，并将打包后的脚本文件引入到HTML中。
+
+
+
