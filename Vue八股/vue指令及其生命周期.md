@@ -246,7 +246,7 @@ function withDirectives(vnode, directives) {
 
 + 元素挂载通过mountElement实现，在把vnode append到容器之前，会执行指令中的beforeMount钩子函数
 + 把创建的DOM元素挂载到container后，会通过 queuePostRenderEffect 的方式执行指令的 mounted 钩子函数。
-  + queuePostRenderEffect用于延迟执行mounted钩子函数，它会将effect函数推入一个名为postFlushCbs的数组中，然后在下一次DOM更新时执行这个数组中的所有effect函数。
+  + queuePostRenderEffect用于延迟执行mounted钩子函数，它会将effect函数推入一个名为，然postFlushCbs的数组中后在下一次DOM更新时执行这个数组中的所有effect函数。
   + 原因：mounted钩子函数中会有对DOM的操作，这些操作需要在DOM渲染后再执行
   + 在Vue3中，DOM更新是通过scheduler来实现的。当数据变化时，Vue会将需要更新的组件加入到一个队列中，然后在下一次tick时，调用scheduler来执行这个队列中的所有组件的更新操作。在执行完组件的更新操作后，scheduler会检查postFlushCbs数组中是否有需要执行的effect函数，如果有，则依次执行这些函数。
   + hostInsert函数，它并不会直接渲染DOM。它只是将元素插入到容器中，具体的渲染操作是由scheduler来完成的。当scheduler执行时，它会遍历所有需要更新的组件，然后调用它们的render函数来生成新的虚拟DOM树，最后将新的虚拟DOM树渲染到真实的DOM中。
