@@ -63,16 +63,17 @@ module.exports = {
 
 webpack通过`splitChunks`插件可以将代码拆分成多个文件，从而实现按需加载。结合`http2`协议可以进一步提高打包速度。
 
-1. 
+分包的好处：拆分多个的好处 就是一旦文件变更，可以有效的利用浏览器缓存。
+
 ~~~js
 module.exports = {
   // ...
   optimization: {
     splitChunks: {
       chunks: "initial",
-      minSize: 20000, // 允许新拆出 chunk 的最小体积，也是异步 chunk 公共模块的强制拆分体积
-      maxAsyncRequests: 10, // 每个异步加载模块最多能被拆分的数量
-      maxInitialRequests: 10, // 每个入口和它的同步依赖最多能被拆分的数量
+      minSize: 20000, // 大小超过20kb的模块才会被提取
+      maxAsyncRequests: 10, // 分割后，按需加载的代码块最多允许的并行请求数
+      maxInitialRequests: 10, // 当按需加载 chunks 时，并行请求的最大数量小于或等于 10
       enforceSizeThreshold: 50000, // 强制执行拆分的体积阈值并忽略其他限制
       cacheGroups: {
         // 微前端框架相关
@@ -98,5 +99,10 @@ module.exports = {
 };
 ~~~
 
-2. 在服务器端启用http2协议。http2协议支持并发加载多个文件，可以减少网络请求的延迟时间。使用`splitChunks`将代码拆分成多个文件后，可以通过http2同时加载多个文件，从而加快打包速度。
+`splitChunks` 中的`chunk`属性指定哪些模块应该被拆分成单独的文件:
++ `"initial"`：入口代码块
++ `"all"`：全部 
++ `"async"`：按需加载的代码块
+
+在服务器端启用http2协议。http2协议支持并发加载多个文件，可以减少网络请求的延迟时间。使用`splitChunks`将代码拆分成多个文件后，可以通过http2同时加载多个文件，从而加快打包速度。
 
