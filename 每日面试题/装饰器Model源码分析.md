@@ -9,6 +9,70 @@
 + vue2的响应式丢失问题，如果不提前定义好一个对象的key，这个对象将不是响应式的（除非通过`vue.set`）,如果提前定义好key（一个model可能几十个key），一个对象又可能在多个页面出现，存在大量重复劳动（vue3 的composition api倒可以解决这个问题）
 + 提交数据有时候需要全量提交，有时候需要增量提交；改了很多数据，想恢复到默认状态；对数据的一些初始化操作等等，常用的功能都封装在ModelBase里面
 
+## 补充
+
+### vite 集成modelbase
+
+vite依赖esbuild，而esbuild最大特性是速度快，所以也不愿支持完整的typescript type checker。这将导致 vite 不能和reflect-metadata一起使用，像 typeorm和nestjs都不大好结合vite
+
+解决方案：`https://kaokei.com/pages/b11568/#walkaround`，`https://github.com/evanw/esbuild/issues/915#issuecomment-791904154`
+
+另外启用modelbase利用reflect-metadata，需要再tsconfig.json设置：
+~~~json
+"compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+}
+~~~
+
+### ts编译的 useDefineForClassFields 标记与 declare 属性修饰符
+
+由于我们创建对象都是通过new A({a: 1})去赋值，如果不进行`define`，则无法通过modelbase进行赋值。需要关闭useDefineForClassFields设置为false，在`tsconfig.json`里面启用如下配置：
+~~~json
+"compilerOptions": {
+    "useDefineForClassFields": false,
+}
+~~~
+
+如果配置了 `useDefineForClassFields: true`，会使用 O`bject.defineProperty` 来初始化声明，对于class的继承会出现值`undefined`的问题。
+下面的例子中，`Consumer`继承了`ModelBase`。我们通常会在ModelBase的构造函数中去根据`new Consumer(dto)`时传入的`dto`对象去结合`Consumer`类声明时定义的元数据去做一个初始化。
+
+~~~ts
+class ModelBase {
+  constructor(dto： any) {
+    this.userName = dto?.userName;
+  }
+}
+
+class Consumer extends ModelBase {
+  // 一般是这么写的 
+  // @Column() 
+  public userName: string
+}
+~~~
+
+编译结果：可以看到在`Consumer`的构造函数中通过`super()`执行完 `ModelBase` 的构造函数后，会执行`Object.defineProperty()`，并通过设置`value: void 0` 初始化为`undefined`导致赋值失败。
+
+~~~js
+"use strict";
+class ModelBase {
+    constructor(dto, any) {
+        this.userName = dto === null || dto === void 0 ? void 0 : dto.userName;
+    }
+}
+class Consumer extends ModelBase {
+    constructor() {
+        super(...arguments);
+        Object.defineProperty(this, "userName", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+    }
+}
+~~~
+
 ## 基本概念
 
 + ModelBase实例：自定义class继承ModelBase后，通过new创建的实例，该实例具有ModelBase原型所有的方法。
