@@ -597,6 +597,13 @@ transform-origin：转换元素的位置（围绕那个点进行转换）。默�
 
 `transform:rotateX(180deg);`
 
+**transform的优势：**
++ 性能优化，会触发GPU的硬件加速，GPU在处理图像上更佳
++ 不触发重绘和重排
+  + 使用transform，浏览器会创建**独立图层**，执行动画不影响其他元素的布局，不会触发重绘重排
+  + 使用transform属性时，浏览器会通过**变换矩阵**来计算元素的变换效果，而不是通过改变元素的位置、大小等属性来实现动画效果。这种计算方式更加高效，不会触发回流和重绘。
++ 相比于伪元素，transform能实现状态间变化的动画
+
 ### 2.4 flex布局
 
 参考以下：
@@ -895,7 +902,6 @@ footer {
 同样实现以下的三栏布局：
 
 ![在这里插入图片描述](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/ded5ee78d75a4e8a91ca8811eeeeceda~tplv-k3u1fbpfcp-zoom-in-crop-mark:4536:0:0:0.awebp)
-
 
 
 **具体实现：**
