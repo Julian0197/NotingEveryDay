@@ -59,6 +59,8 @@ module.exports = {
 
 使用Webpack控制台输出分析：Webpack 5提供了控制台输出分析的功能，可以通过分析构建过程中的控制台输出信息，找出构建过程中的性能瓶颈，从而进行相应的优化。
 
+配置`webpackChunkName`
+
 #### splitChunks属性
 
 webpack通过`splitChunks`插件可以将代码拆分成多个文件，从而实现按需加载。结合`http2`协议可以进一步提高打包速度。

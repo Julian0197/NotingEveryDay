@@ -27,6 +27,8 @@ vite依赖esbuild，而esbuild最大特性是速度快，所以也不愿支持�
 
 ### ts编译的 useDefineForClassFields 标记与 declare 属性修饰符
 
+当`tsconfig.json`中的`target` 设置为`ESNext` 或者`ES2022`时，属性修饰器会失效。因为在新的版本下`useDefineForClassFields`这个属性默认设置为`true`
+
 由于我们创建对象都是通过new A({a: 1})去赋值，如果不进行`define`，则无法通过modelbase进行赋值。需要关闭useDefineForClassFields设置为false，在`tsconfig.json`里面启用如下配置：
 ~~~json
 "compilerOptions": {
@@ -34,7 +36,7 @@ vite依赖esbuild，而esbuild最大特性是速度快，所以也不愿支持�
 }
 ~~~
 
-如果配置了 `useDefineForClassFields: true`，会使用 O`bject.defineProperty` 来初始化声明，对于class的继承会出现值`undefined`的问题。
+如果配置了 `useDefineForClassFields: true`，会使用 `Object.defineProperty` 来初始化声明，对于class的继承会出现值`undefined`的问题。
 下面的例子中，`Consumer`继承了`ModelBase`。我们通常会在ModelBase的构造函数中去根据`new Consumer(dto)`时传入的`dto`对象去结合`Consumer`类声明时定义的元数据去做一个初始化。
 
 ~~~ts
@@ -72,6 +74,10 @@ class Consumer extends ModelBase {
     }
 }
 ~~~
+
+#### 设置需要被修饰的属性为declare
+
+`declare`用于在TS中声明，告诉编译器存在这么一个对象，可以在其他地方使用声明的对象。**编译器不会将此语句编译为js**，declare关键字用于 TypeScript 声明文件 ( .d.ts )。
 
 ## 基本概念
 
