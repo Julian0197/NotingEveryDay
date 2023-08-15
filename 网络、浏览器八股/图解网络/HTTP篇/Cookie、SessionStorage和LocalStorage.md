@@ -28,7 +28,9 @@ Cookie主要用于三个目的：
 | maxAge      | cookie失效的时间，单位秒。<br/>如果为负数，该cookie为临时cookie，关闭浏览器失效。<br/>如果为0，表示删除该cookie。<br/>默认为-1，**比expires字段好用** |
 | expires     | cookie过期时间（**绝对时间**），在设置的某个时间点后cookie失效<br/>一般浏览器的cookie都是默认存储，当关闭浏览器时，这个cookie删除（maxAge默认为-1） |
 | secure      | 该cookie是否**仅被使用安全协议传输**（HTTPS），默认为false   |
-| httpOnly    | 如果给某个cookie设置了httpOnly属性，则无法通过JS脚本读取到cookie信息，但还是能通过Application中手动修改cookie，所以只能在一定程度上防止XSS攻击，不是绝对的安全 |
+| httpOnly    | 如果给某个cookie设置了httpOnly属性，则无法通过JS脚本读取到cookie信息，但还是能通过Application中手动修改cookie，所以只能在一定程度上防止XSS攻击，不是绝对的安全 
+| SameSite    | 在HTTP的header上，通过`set-cookie`设置cookie带上samesite选项，用于防范CSRF攻击。 `strict`: 浏览器只发送相同站点请求的cookie，即当前网页的URL必须与请求目标一致， `Lax`: 允许第三方请求携带cookie，`None`: 无论是否跨站都会携带cookie |
+
 
 #### 创建cookie
 
@@ -42,7 +44,7 @@ Cookie主要用于三个目的：
 
 `Domain` 和 `Path` 标识定义了 Cookie 的作用域：即 Cookie 应该发送给哪些 URL。
 
-`Domain` 标识指定了哪些主机可以接受 Cookie。如果不指定，默认为当前主机(**不包含子域名**）。如果指定了`Domain`，则一般包含子域名。
+`Domain` 标识指定了哪些主机可以接受 Cookie。如果不指定，默认为当前主机(**不包含子域名**)。如果指定了`Domain`，则一般包含子域名。
 
 例如，如果设置 `Domain=mozilla.org`，则 Cookie 也包含在子域名中（如`developer.mozilla.org`）。
 
@@ -172,12 +174,20 @@ Storage.prototype.getExpire = key => {
 localStorage.setExpire("token",'xxxxxx',5000);
 window.setInterval(()=>{
     console.log(localStorage.getExpire("token"));
+  }
 ~~~
 
-### html5其他几种存储方法
+### SSO单点登录
 
-1. 离线缓存 `application cache`
-2. `indexedDB 和 webSQL`：用于结构化数据存储
+> 我们的token都是放在sessionStorage里面的，关闭页面应该就会清除。但是使用了SSO，每次进页面都会重新请求拿到新的token放到sessionStorage里面。请问SSO是怎么保持持久登录的？
+
++ 打开 `powerpro-test.nio.com`
++ 尝试从`sessionStorage`中获取 `access_token`
+  + 找到，想服务端发送获取用户信息的请求
+  + 没找到，跳转 `signin.nio.com` 认证中心
+    + 有cookie，直接向服务器发送请求，服务器返回对应token存起来
+    + 没有cookie，等待用户输入用户名和密码
++ 如果`sessionStorage`中 `access_token`过期了，会发送`refresh_token`去重新请求，体验无感。如果`refresh_token`过期，跳转到认证中心`signin.nio.com`重新上述操作。
 
 ## JSON WEB TOKEN （JWT）
 
@@ -240,7 +250,7 @@ Payload包含一个声明，有关用户和其他数据的声明，声明有三�
 - payload (base64后的)
 - secret
 
-签名用于验证消息在此过程中没有更改，并且对于使用私钥进行签名的令牌，它还可以验证 JWT 的发送者的真实身份。
+签名(Signature)用于验证JWT的完整性和真实性。通过将编码后的签名和载荷与一个秘钥进行加密生成的。
 
 ### JWT原理
 
@@ -258,13 +268,98 @@ JWT 的原理是，服务器认证以后，生成一个 JSON 对象，发回给�
 
 **服务器就不保存任何 session 数据了**，也就是说，服务器变成无状态了，从而比较容易实现扩展。
 
+### 如何验证JWT
+
+首先签名的生成过程：
+1. 将编码后（base64转化为字符串）的头部和payload通过特定分隔符（一般是.）连接形成一个字符串
+2. 用头部中指定的签名算法和秘钥（私钥，在服务端生成）对上述字符串加密，生成secret
+3. 签名包括header，payload和secret
+
+验证JWT：
+1. 提取header和payload，使用相同加密算法和秘钥加密
+2. 结果与signature比对，签名一致，说明没有被篡改
+
+### JWT如何附带在请求上
+
+1. HTTP头部的 `Autnorization` 字段
+2. 直接放在请求参数中
+3. cookie中
+
+后端需要进行相应的设置来接收和验证 Token。下面是使用NodeJs和Express框架的代码：
+~~~js
+const express = require('express');
+const jwt = require('jsonwebtoken');
+
+const app = express();
+
+// 设置密钥
+const secretKey = 'your-secret-key';
+
+// 路由中间件，用于验证 Token
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (token == null) {
+    return res.sendStatus(401); // 没有提供 Token
+  }
+
+  jwt.verify(token, secretKey, (err, user) => {
+    if (err) {
+      return res.sendStatus(403); // Token 验证失败
+    }
+    req.user = user; // 将用户信息存储在请求对象中，可在后续处理中使用
+    next();
+  });
+};
+
+// 示例路由，需要验证 Token
+app.get('/api/protected', authenticateToken, (req, res) => {
+  // 在这里可以使用 req.user 获取用户信息进行后续处理
+  res.send('Protected data');
+});
+
+// 示例路由，用于登录并生成 Token
+app.post('/api/login', (req, res) => {
+  // 在登录验证通过后，生成 Token 并返回给客户端
+  const user = { id: 1, username: 'example' };
+  const token = jwt.sign(user, secretKey);
+  res.json({ token });
+});
+
+app.listen(3000, () => {
+  console.log('Server started on port 3000');
+});
+~~~
+
+### 如何防止别人获取你的token
+
+1. HTTPS协议，防止中间人攻击和窃听，保护token不被篡改和获取
+2. 尽量放在`Authorization`字段中，如果放在cookie中可以通过设置`samesite`,`security`,`httponly`等方式
+3. 生成 JWT Token 的同时生成 `refresh_token`，其中 `refresh_token` 的有效时间长于 JWT Token，当 JWT Token 过期之后，使用 refresh_token 获取新的 JWT Token 与 refresh_token，这样用户就可以享受无感知的刷新体验
+4. 监控和日志记录，监测是否有token滥用，异常登录等
+
+
 ### JWT 和 Session Cookies的不同
 
-1. JWT有加密签名
+1. JWT有加密签名`本地`进行，而不是在请求必须通过服务器数据库或类似位置中进行。 这意味着可以对用户进行多次身份验证，而无需与站点或应用程序的数据库进行通信
 
 2. JWT是无状态的，声明存储在客户端，Session存储在服务端。
 
-   身份验证可以在`本地`进行，而不是在请求必须通过服务器数据库或类似位置中进行。 这意味着可以对用户进行多次身份验证，而无需与站点或应用程序的数据库进行通信，也无需在此过程中消耗大量资源。
+   身份验证可以在，也无需在此过程中消耗大量资源。
 
 3. JWT 支持跨域认证，能够通过`多个节点`进行用户认证，也就是我们常说的`跨域认证`。
 
+## html5其他几种存储方法
+
+1. 离线缓存 `application cache`
+2. `indexedDB 和 webSQL`：用于结构化数据存储
+
+### indexDB
+
+在浏览器中存储结构化数据的数据库，
+
+对比localStorage：
++ localStorage存储容量为4.98MB，indexDB没有固定容量限制但是比较大，受浏览器所限。
++ IndexedDB 支持创建索引和执行复杂的查询操作，localStorage 没有内置的查询和索引功能，只能通过遍历所有数据来查找。
++ 操作indexDB是异步的，独立于主线程，谷歌浏览器用的是Web Worker 线程，不会阻塞主线程的执行
