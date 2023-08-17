@@ -165,3 +165,31 @@ display用于展示HTML元素的显示行为。
 1. 样式可以重复使用
 2. 浏览器在解析HTML文档时，会将CSS文件进行缓存。如果使用行内样式，每次加载新的页面都需要重新解析和加载CSS样式，而将样式写在class中，只需要加载一次CSS文件，可以在多个页面上复用。
 3. 浏览器在渲染页面时，会先构建DOM树和CSSOM树，然后将它们合并为渲染树。将样式写在class中可以提前加载CSS文件，并在构建CSSOM树时进行解析，提高渲染速度。而行内样式需要等待DOM树构建完毕才能解析，会延迟页面的渲染。
+
+### 如何打破chrome最小字号限制
+
+最低为12像素，如果我想要6px。
+
+使用css的缩放属性：`transform: scale()`
+
+1. 对于块级元素内部字体：
+
+~~~css
+.block {
+  font-size: 12px;
+  transform: scale(0.5);
+}
+~~~
+
+2. 对于行内元素，span
+
++ transform属性只针对块级盒子和行内块有效，需要转化为inline-block
++ 中心缩放，还要调整缩放位置，调整中心原点为最左边
++ 高度没变化，需要手动改变
+
+~~~css
+.span {
+  font-size: 12px;
+  transform: scale(0.5);
+  tansform-origin: left center;
+~~~
