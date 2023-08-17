@@ -58,26 +58,6 @@ color，border-style,background...
     const tempoOffsetWidth = renderEle； // 避免直接读取offsetWidth
   ~~~
 
-### display:none visibility:hidden opacity:0 区别
-
-1. display：none
-
-   + 浏览器不会渲染，不占据空间
-   + 无法进行DOM事件监听
-   + 动态改变此属性会引起回流
-   + 不会被子元素继承
-2. visibilty：hidden
-
-   + 元素被隐藏，但是占据空间
-   + 无法监听DOM事件
-   + 会引起重绘
-   + 会被子元素继承，子元素可以设置 visibility: visible; 来取消隐藏
-3. opacity：0
-   + 透明度100%，元素隐藏，占据空间
-   + 可以进行DOM事件监听
-   + 提升为合成层，不会触发重绘，性能较高；
-   + 继 承：会被子元素继承,且，子元素并不能通过 opacity: 1 来取消隐藏；
-
 
 ### AST是啥
 
