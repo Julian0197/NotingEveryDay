@@ -128,23 +128,6 @@ p::first-line {
 + inline：内联元素，前后无换行符，在一行排列，不可设置`width`和`height`，垂直方向`padding, margin`失效
 + inline-block：内联块级元素，可以设置`width`和`height`，前后无换行符，`padding, margin`水平垂直方向均有效
 
-### 1.5 盒子模型
-
-#### 1.5.1 盒子模型组成
-
-- border 边框
-- content 内容
-- padding 内边距
-- margin 外边距
-
-![image](https://img-blog.csdnimg.cn/img_convert/a443847572daef1f0cc0f33c70044b4c.png)
-
-盒模型分为两种 IE盒模型（border-box）、W3C标准盒模型（content-box）
-
-**标准盒子模型： width=content 盒子宽度=width+padding+border**
-
-IE盒子模型： width=content+padding+border 盒子宽度=width
-
 #### 1.5.2 边框 border
 
 ~~~css
@@ -208,7 +191,7 @@ text-align: center
 
 尽量只给一个盒子添加margin值
 
-#### 1.5.5 清楚内外边距
+#### 1.5.5 清除内外边距
 
 网页元素很多都带有默认的内外边距，而且不同的浏览器默认的也不一致
 
@@ -404,111 +387,6 @@ right: 80px;  /*右侧偏移量，定义元素相对于其父元素右边线的�
 + `grid`：网格布局
 + `flex`：弹性布局
 
-### 1.11 BFC
-
-BFC是**块级格式化上下文**
-
-简单来说：BFC是一个封闭的空间，空间里的元素不会影响到外面的布局
-
-#### 1.11.1 触发BFC方式
-
-+ 根元素，即HTML标签
-+ 浮动元素：float值为left或right
-+ 定位元素：position为fixed或absolute的元素
-+ overflow值不为visible，为auto、scroll、hidden的元素
-+ display值为inline-block、table-cell、table-caption、flex、inline-flex的元素
-
-https://jsbin.com/cinugobaca/edit?html,css,output
-
-加了`float`后父级元素无法包裹住子级元素:
-
-~~~css
-.baba {
-  border: 10px solid #bd1000;
-  min-height: 10px;
-   /* 通过以下方式，触发bfc */
-  /* float:left; */
-  /* position: absolute; */
-  /* display: inline-block
-  /* overflow: hidden; */
-  /* display: table-cell; */
-}
-.erzi {
-  background: pink;
-  height:200px;
-  width:200px;
-  float: left;
-}
-~~~
-
-<img src="C:\Users\MSK\AppData\Roaming\Typora\typora-user-images\image-20230130140926268.png" alt="image-20230130140926268" style="zoom: 22%;" />   =><img src="C:\Users\MSK\AppData\Roaming\Typora\typora-user-images\image-20230130140940725.png" alt="image-20230130140940725" style="zoom: 22%;" />  <img src="C:\Users\MSK\AppData\Roaming\Typora\typora-user-images\image-20230130141347718.png" alt="image-20230130141347718" style="zoom:22%;" />
-
-#### 1.11.2 BFC作用
-
-1. 阻止元素被浮动元素覆盖
-2. 可用来清除浮动带来的外边距塌陷问题
-3. 阻止因浏览器四舍五入造成的多列布局换行的情况
-4. 阻止相邻元素margin合并（防止外边距折叠）
-5. 可以用来自适应两栏布局
-
-### 1.13 隐藏页面中某个元素方法
-
-1. opacity = 0
-   + 元素透明度为0，不改变页面布局
-2. visibilty = hidder
-   + 元素不可见，也不改变页面布局
-3. display: none
-   + 元素直接从渲染树消失
-4. position 移动到外部
-5. z-index 图层遮盖
-
-### 1.14 什么是外边距重叠，重叠的结果
-
-#### 1.14.1 父子元素边距重叠
-
-预计实现的结果应该是父容器距离页面顶部 `100px`，子容器距离父容器 `100px` 
-
-~~~css
-body {
-    background: gray;
-    margin: 0;
-    padding: 0;
-}
-.baba {
-  width: 600px;
-    height: 600px;
-    background: yellow;
-    margin-top: 100px;
-}
-.erzi {
-  width: 200px;
-    height: 200px;
-    background: green;
-    margin-top: 100px;
-}
-~~~
-
-但是父容器距离页面上方 `100px` ，子容器和父容器之间却没有距离。
-
-<img src="C:\Users\MSK\AppData\Roaming\Typora\typora-user-images\image-20230130143134773.png" alt="image-20230130143134773" style="zoom:33%;" />
-
-原因就是发生了边距重叠，一个盒子如果没有添加 `BFC`，那么它的**上边距应该和其文档流中的第一个子元素的上边距重叠**。
-
-**解决**： 通过给父容器添加` overflow: hidden` 属性，使之成为 `BFC` 。
-
-```js
- .baba {
-     overflow: hidden;
-  }
-```
-
-
-
-两个相邻的外面边距是正数时，折叠结果就是他们之中的较大值； 
-
-两个相邻的外边距都是负数时，折叠结果是两者绝对值的较大值； 
-
-两个外边距一正一负时，折叠结果是两者的相加的和；
 
 ## 2 CSS3新特性
 

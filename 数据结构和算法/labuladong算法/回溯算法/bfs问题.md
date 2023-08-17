@@ -221,7 +221,7 @@ rl.on('line', function(line) {
   const visited = new Set() // 已经遍历过的节点
   visited.add(0)
   while (q.length > 0) {
-    const [cur, path] = q.shift
+    const [cur, path] = q.shift()
     // 叶子节点
     if (node !== 0 && nxs[node].length === 1) {
       console.log(path.join('->'))

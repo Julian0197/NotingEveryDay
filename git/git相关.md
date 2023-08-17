@@ -34,8 +34,20 @@ a <- b <- c
 git会从两个分支的最近公共祖先B开始，提取master分支上的修改（C，D）保存起来，再将master分支指向test分支最新提交的节点F，再把保存的C，D接到F后面，在这个过程当中，会删除原来的C,D commit 记录，生成新的C‘，D'，虽然C',D'和原来的C,Dcoommit的内容是一样的，但是 commit id 是不同的。
 
 ### 冲突
-+ 我在没有git pull --rebase到最新代码的时候，还进行了开发，并且git push了当前修改，别人在pull会产生冲突。我来解决的话是不是：1.git pull --rebase拉取最新代码，此时有冲突，分支会从dev->空分支。 2.每处理完一次本地commit冲突，用git add标记冲突已处理完，用git rebase --continue继续处理下一个本地commit，也可以先用git rebase -i将本地的commit合并为一个commit，这样git pull --rebase就能一次处理所有的冲突
-+ 刚刚是这样：我在git commit后git pull，shuai同意了这次合并，本地commit已经合并到远程。但是我又修改了代码，提交的时候没有创建新的commit，而是使用git commit --amend，想要追加修改。会产生冲突。              解决方法：1.git reset --soft <上上一次的commit log>，这时候你本地的第一次commit和第二次commit --amend会复原 2.git stash 3.git pull --rebase 拉取远程最新代码，git stash pop这时候不会有冲突 4. git add git commit git push正常提交
+1. 我在没有git pull --rebase到最新代码的时候，还进行了开发，并且git push了当前修改后产生冲突。
+
+解决方法：
++ git pull --rebase拉取最新代码，此时有冲突，会进入一个空分支
++ 每处理完一次本地commit冲突，用git add标记冲突已处理完，用git rebase --continue继续处理下一个本地commit
+  + `git rebase --continue` 的作用是告诉 Git 继续执行 rebase 操作的下一步，直到所有提交都被应用或 rebase 操作完成。
+  + 也可以先用`git rebase -i`将本地的commit合并为一个commit
+
+2. 我在git commit后git pull，权限管理者同意了这次合并，本地commit已经合并到远程。但是我又修改了代码，提交的时候没有创建新的commit，而是使用git commit --amend，想要追加修改。会产生冲突。              
+
+解决方法：
++ git reset --soft <上上一次的commit log>，这时候你本地的第一次commit和第二次commit --amend会复原
++ git stash 3.git pull --rebase 拉取远程最新代码，git stash pop这时候不会有冲突  
++ git add git commit git push正常提交
 
 ### 合并分支
 当前处于feat分支，先要合并feat分支到远程的dev，做法：
