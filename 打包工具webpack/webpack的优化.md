@@ -108,3 +108,24 @@ module.exports = {
 
 在服务器端启用http2协议。http2协议支持并发加载多个文件，可以减少网络请求的延迟时间。使用`splitChunks`将代码拆分成多个文件后，可以通过http2同时加载多个文件，从而加快打包速度。
 
+#### 魔术注释
+
+在 import 关键字后的括号中使用指定注释，我们可以对代码分割后的 chunk 有更多的控制权。
+
+~~~js
+// index.js
+import (
+  /* webpackChunkName: "my-chunk-name" */
+  './footer'
+)
+同时，也要在 webpack.config.js 中做一些改动：
+// webpack.config.js
+{
+  output: {
+    filename: "bundle.js",
+    chunkFilename: "[name].lazy-chunk.js"
+  }
+}
+~~~
+
+通过这样的配置，我们可以对分离出的 chunk 进行命名，这对于我们 debug 而言非常方便。包括使用vie打包能看到不同chunk的打包情况。

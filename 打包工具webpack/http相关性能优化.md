@@ -17,6 +17,10 @@
 
 #### js预加载
 
+##### preload预加载静态资源
+
+##### 合理运用 async，defer，type="module"
+
 ~~~html
 <script src="index.js"></script>
 ~~~
@@ -47,6 +51,55 @@
 
 ~~~html
 <script type="module">import { a } from './a.js'</script>
+~~~
+
+### 预加载静态资源 link标签+preload属性
+
+preload 一般是预加载当前页面要用到的图片、字体、js 脚本、css 文件等静态资源文件。**先加载这些静态资源，并推迟到要使用再执行。**
+
+1. 场景1，预加载js文件，用到的时候再调用
+
++ 创建一个HTMLLinkElement 实例，然后将他们附加到 DOM 上：
+ ~~~js
+var preloadLink = document.createElement("link");
+preloadLink.href = "myscript.js"; // 预加载的静态资源
+preloadLink.rel = "preload"; // preload标识预加载
+preloadLink.as = "script"; // 被链接资源的类型
+document.head.appendChild(preloadLink);
+ ~~~
+
+浏览器会预先加载这个js文件，但不实际执行他。
+
++ 真正使用时，创建一个新的script标签，设置src属性来执行预加载的资源
+~~~js
+var preloadedScript = document.createElement("script");
+preloadedScript.src = "myscript.js";
+document.body.appendChild(preloadedScript);
+~~~
+
+2. 场景2，预加载字体，用到的时候直接使用
+
++ 如果没有preload，也是可以正常执行的，但是加载src中的字体需要等到当前页面的js，css加载完毕才回去请求
+~~~js
+<style>
+  @font-face {
+    font-family: Test-Number-Medium;
+    src: url(./static/font/Test-Number-Medium.otf);
+  }
+</style>
+~~~
+
++ 加上preload可以预加载字体，通常加载字体会很快
+~~~js
+<link rel="preload" href="./static/font/Test-Number-Medium.otf">
+~~~
+
+##### prefetch预加载
+
+prefetch 一般是预加载非当前页面的资源，prefetch 是一个**低优先级**的资源提示，允许浏览器在后台（空闲时）获取将来可能用得到的资源，并且将他们存储在浏览器的缓存中。
+
+~~~js
+<link rel="prefetch" href="/uploads/images/pic.png">
 ~~~
 
 ### 懒加载
@@ -139,3 +192,60 @@ export default defineConfig({
 + 该组件又不是一进入页面就触发的，需要一定条件才触发的（比如弹窗）
 + 该组件复用性高，很多页面引用，可以理由懒加载单独形成一个文件
 + 其他时候不建议拆分过细，因为会造成浏览器http请求增多；
+
+## 减少静态资源大小
+
+### 代码层优化
+
++ webpack tree shaking只打包用到的依赖包
++ 代码分割 code spliting，不同页面加载自己用到的代码，不加载其他页面的代码（其实也属于懒加载）。
+
+### 传输层优化
+
+HTTP传输采用压缩传输，开启`gzip`, 基本都能压缩 6 倍左右（一般都是文件越大，字符串相似率越大，压缩率越大）
+
+经过服务器压缩后，设置HTTP响应头的 `Content-Encoding: gzip`，浏览器会自动解压。
+
+## 利用http 2.0
+
+### 二进制分帧
+
+HTTP/2 使用二进制分帧（Binary Framing）来传输数据。在 HTTP/2 中，所有的数据都被分割成更小的帧（Frames）进行传输。每个帧都有一个帧头（Frame Header），用于标识帧的类型、长度和其他相关信息。
+
+通过使用二进制分帧，HTTP/2 提供了以下几个优势：
+
++ 多路复用（Multiplexing）：HTTP/2 允许在同一个连接上同时发送和接收多个请求和响应。每个请求和响应都被划分为多个帧，可以并发地发送和接收，无需按顺序等待。这提高了并发请求的效率和性能。
+
++ 流量控制（Flow Control）：HTTP/2 支持流量控制机制，可以在发送方和接收方之间进行流量控制，防止接收方被过多的数据淹没。每个帧都可以设置一个权重和优先级，以便进行合理的流量控制。
+
++ 优化性能：二进制分帧可以更有效地使用网络带宽。HTTP/2 可以将多个请求和响应打包在同一个 TCP 连接中，减少了建立和关闭连接的开销，并通过头部压缩（Header Compression）来减小数据的大小，提高传输效率。
+
+### 多路复用
+
+浏览器存在**同域名并发限制**，HTTP1.1（包括之前版本），最多并发6个。
+
++ HTTP1.1 持久连接解决了连接复用问题，一个 TCP 连接可以同时发送多个请求，并且无需等待每个响应完成才能发送下一个请求。这是通过使用管道（Pipeline）技术实现的。但它存在一个问题，即队头阻塞（Head-of-Line Blocking）。由于响应的顺序与请求的顺序一致，如果某个请求的响应较慢，那么后续的请求也必须等待该响应返回后才能继续进行。
++ HTTP/2 协议引入了多路复用（Multiplexing）技术。HTTP/2 允许在同一个连接上同时发送和接收多个请求和响应，无需按顺序等待。这样可以提高并发请求的效率和性能。
+  + 有多路复用特性，那么浏览器对同一域名的链接数的限制也是没必要的了
+
+### 首部字段压缩
+
+HTTP2.0 使用 HPACK 算法对首部字段的数据进行压缩，这样数据体积小了，在网络上传输就会更快
+
+## 使用CDN
+
+CDN 最大的优势在于提升用户资源访问速度，因此静态资源走 CDN 是一个很好的优化点。
+
+原理：
+1. 缓存：CDN 部署了一系列的边缘节点（Edge Nodes），这些节点分布在全球各个地理位置。当用户请求访问某个网站或资源时，CDN 会根据用户的位置，将内容缓存到离用户最近的边缘节点上。
+
+2. 就近访问：当用户发起请求时，CDN 会根据用户的 IP 地址或 DNS 解析结果，将用户的请求导向离用户最近的边缘节点。这样可以减少数据传输的延迟和网络拥塞，提高访问速度。
+
+3. 负载均衡：CDN 会根据边缘节点的负载情况和用户的位置，动态选择最适合的边缘节点来处理用户的请求。这样可以实现负载均衡，避免某个节点过载而影响用户访问体验。
+
+4. 静态内容加速：CDN 主要用于加速静态内容的传输，如图片、CSS、JavaScript 文件等。这些静态内容通常具有较长的缓存时间，可以被缓存在边缘节点上，从而减少源服务器的负载和网络传输的时间。
+
+5. 动态内容优化：CDN 还可以对动态内容进行优化。一种常见的方法是使用缓存服务器与源服务器之间的缓存协商，只在需要更新时才向源服务器请求最新的内容。
+
+6. 容错和冗余：CDN 的边缘节点通常会有多个副本，以提供容错和冗余。如果某个节点发生故障或不可用，请求会自动转发到其他可用的节点上，从而保证服务的可靠性和可用性。
+
