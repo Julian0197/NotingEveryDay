@@ -8,7 +8,7 @@
 
 #### `type`可以但是`interface`不可以：
 
-1. 定义基本类型，`type myString = number`
+1. 定义基本类型的别名，`type myString = number`
 2. 通过 `typeof` 操作符定义，`type myType = typeof someObj`
 3. 可以声明联合类型，`type unionType = type1 | type2`
 4. 可以声明元祖类型，`type tupleType = [type1, type2]`

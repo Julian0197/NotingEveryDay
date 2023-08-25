@@ -129,3 +129,12 @@ import (
 ~~~
 
 通过这样的配置，我们可以对分离出的 chunk 进行命名，这对于我们 debug 而言非常方便。包括使用vie打包能看到不同chunk的打包情况。
+
+通过添加 `webpackPrefetch` 魔术注释，Webpack 令我们可以使用与 `<link rel=“prefetch”>` 相同的特性。让浏览器会在 Idle 状态时预先帮我们加载所需的资源，善用这个技术可以使我们的应用交互变得更加流畅。
+
+~~~js
+import(
+  /* webpackPrefetch: true */
+  './someModule'
+);
+~~~
