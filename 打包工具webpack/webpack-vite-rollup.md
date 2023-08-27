@@ -50,4 +50,41 @@ tapable是一个基于发布订阅模式的插件架构库，它提供了一套�
 又比如：在`emit`阶段，HtmlWebpackPlugin会监听Webpack的构建结果，获取打包后的文件信息。然后，它会根据配置的模板文件和打包后的文件信息，生成一个新的HTML文件，并将打包后的脚本文件引入到HTML中。
 
 
+### mini-webpack 打包原理
+
++ 读取入口文件（利用node的fs模块）
++ 分析入口文件，递归地去读取入口文件的依赖，形成依赖树，转化为AST
+  1. 安装`@babel/parser`,转化为AST树
+  2. 使用`@babel/traverse`模块遍历ast，遍历到`ImportDeclaration`结构出里面的node
+  3. 使用`@babel/core`和`@babel/preset-env`将ES6转化为ES5
+
+### vit构建核心原理
+
+#### 打包入口，打包方式
+
++ 传统构建工具以某一个js模块作为打包入口，根据import语法静态分析出模块之间的依赖关系，再将入口文件及其所有依赖打包到一个文件中，这个文件就是最终的打包结果。
++ vite在开发阶段不再进行模块打包，利用浏览器的esModule来组织模块，浏览器会根据import语法发送http请求，获取到对应的模块代码，这样就不需要打包了。vite在生产环境下才会进行打包，打包的结果和传统的webpack打包结果一样。
++ `package.json`不再包含main字段。vite的入口文件是`index.html`中开启了 EsModule 的script标签。
+
+```html
+<script type="module" src="/src/main.js"></script>
+```
+
+#### 路径转化支持 ESM
+
+`import { createApp } from 'vue'`，在nodejs里，会去`node_modules`里去找。在浏览器的ESM模块下，导入语句只能支持`/xxx`绝对路径，或者`./xxx, ../xxx`相对路径。
+
+vite会对第三方库的路径进行转化，将`import { createApp } from 'vue'`转化为`import { createApp } from '/@modules/vue'`，`/`开头的路径会被认为是绝对路径，会去`node_modules`里去找。
+
+借助中间件，当捕获到客户端对于`/@modules`的请求时，全部重定向到`node_modules`里去找对应的模块，再返回给客户端。
+
+#### 处理vue单文件组件
+
+vue单文件组件，使用了 `@vue/compiler-sfc` 这个编译器来解析和转换 .vue 文件中的模板、脚本和样式。它还使用了 `rollup-plugin-vue` 这个 `Rollup` 插件来处理 vue. 文件中的 `<script>` 部分。
+
+#### 热更新
+
+vite的热更新是基于websocket实现的，当文件发生变化时，会通过websocket通知客户端，客户端再去请求最新的模块代码。
+
+
 
