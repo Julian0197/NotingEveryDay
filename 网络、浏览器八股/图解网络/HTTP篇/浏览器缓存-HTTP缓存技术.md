@@ -31,8 +31,8 @@ Cache-control 选项更多一些，设置更加精细，属性有：
 
 + public：响应可以被任何缓存
 + private：响应只能被客户端缓存，不能被代理服务器缓存
-+ no-cache：强制缓存服务器在返回响应之前，先向源服务器验证缓存的有效性
-+ no-store：完全禁止缓存的存储（包括客户端和缓存服务器）
++ no-cache：不走强缓存，走协商缓存
++ no-store：不缓存
 + max-age=seconds：有效的缓存时间
 
 所以建议使用 Cache-Control 来实现强缓存。具体的实现流程如下：
@@ -90,5 +90,87 @@ Cache-control 选项更多一些，设置更加精细，属性有：
   + 如果不相等，则返回 200 状态码和返回资源，并在 Response 头部加上新的 ETag 唯一标识；
 + 如果浏览器收到 304 的请求响应状态码，则会从本地缓存中加载资源，否则更新资源。
 
+#### 常用缓存策略
+
++ html：no-cache，走协商缓存，保证每次拿最新的
++ js文件：css文件：设置max-age，静态资源可以设置较长时间
++ XHR请求：no-cache
+
+#### 前端配置缓存
+
+1. 在HTML的`<head>`标签中嵌入的`<meta>`标签中，通过设置`http-equiv`属性来模拟HTTP头部：
+
+```html
+//禁用缓存如下：
+<meta http-equiv="pragma" content="no-cache">
+// 仅有IE浏览器才识别的标签，不一定会在请求字段加上Pragma，但的确会让当前页面每次都发新请求
+<meta http-equiv="cache-control" content="no-cache">
+// 其他主流浏览器识别的标签
+<meta http-equiv="expires" content="0">
+// 仅有IE浏览器才识别的标签，该方式仅仅作为知会IE缓存时间的标记，你并不能在请求或响应报文中找到Expires字段
 
 
+//设置缓存如下：
+<meta http-equiv="Cache-Control" content="max-age=7200" />
+// 其他主流浏览器识别的标签
+<meta http-equiv="Expires" content="Mon, 20 Aug 2018 23:00:00 GMT" />
+// 仅有IE浏览器才识别的标签
+```
+
+
+
+2. 前端配置缓存只能设置html文件的缓存，对网页中的图片，js文件等其他静态资源无法配置，需要在nginx等服务器站点配置。
+
+常用的web服务器有：nginx、apache。这里列举下nginx的配置示例，具体location匹配正则规则
+
+```js
+//示例1：强缓存时效为30s，30s后默认使用协商缓存，此时缓存时效优先级 > max-age
+location / {
+    add_header Cache-Control max-age=60;
+    root   html;
+    index  index.html index.htm;
+    expires 30s;
+}
+
+//示例2: 只使用协商缓存
+location / {
+    # no-cache 禁用强缓存
+    add_header Cache-Control no-cache;
+    root   html;
+    index  index.html index.htm;
+}
+```
+
+#### 缓存对页面性能的影响
+
+验证工具：chrome dev tools + Lighthouse
+
+无缓存测试（掘金为例）：
+
+1. 在 Network 选项里面，先打开 disable cache
+2. 选择Lighthouse，analyze page load
+3. 获得性能报告
+   1. FCP：白屏时间
+   2. TTI：响应交互时间
+   3. LCP：最大内容时间
+   4. CLS：累计布局偏移（现有元素的起始位置发生变更）
+4. 取消勾选 disable cache(相当于在http请求头加上了`Cache-Control: no-store`)，重复上述操作，可以发现有缓存时：
+   1. 白屏时间：缩短 **0.3s**
+   2. 交互响应时间: 缩短 **1.4s**
+   3. 最大内容时间： 缩短 **1.5s**
+
+
+
+缓存位置的区别：
+
++ `memory cache` 表示缓存来自内存，相比硬盘更快，但关闭tab页面，内存就会被释放，再次打开相同的页面时，原来的 memory cache 会变成 disk cache
++ `disk cache` 表示缓存来自硬盘，关闭tab页甚至关闭浏览器后，数据依然存在，下次打开仍然会是 from disk cache
++ 一般情况下，浏览器会将js和图片等文件解析执行后直接存入内存中，这样当刷新页面时，只需直接从内存中读取(from memory cache)；
++ css文件则会存入硬盘文件中，所以每次渲染页面都需要从硬盘读取缓存(from disk cache)
+
+
+
+缓存和不缓存的差异体现在：
+
++ 网络请求阶段：减少了网络传输时间，因为资源在本地的读取速度快
++ 渲染阶段：下载js或者css可能会阻塞DOM渲染，加长白屏时间
