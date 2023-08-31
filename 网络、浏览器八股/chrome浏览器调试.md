@@ -104,11 +104,28 @@ console.log({ total });  //{total: 5000050000}
 
 ​	<img src="https://p6-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/ff65ad2f8d9746e0a7b54146eb569c78~tplv-k3u1fbpfcp-zoom-in-crop-mark:1512:0:0:0.awebp?" alt="Snipaste_2023-05-09_18-46-09.png" style="zoom:50%;" />		
 
+可以先借助Performance 中堆内存随着事件流而增长的图像，来大概定位内存泄露的大概位置。
+
+在记录前和结束时，都手动垃圾回收一下，如果js heap没有下降，那很可能存在内存泄露。
+
+![image-20230830223338977](C:\Users\MSK\AppData\Roaming\Typora\typora-user-images\image-20230830223338977.png)
 
 
-4. 精确定位，借助 Memory 通过页面的 JavaScript 对象和相关的 DOM 节点显示内存分布。使用它来获取JS堆快照，分析内存图，比较快照，并查找内存泄漏。
-   1. 记录几次堆快照，记得每次开始和结束要手动垃圾回收
-   2. 比较快照，查看内存差异，哪个是内存增长的大头（可以看到具体的VueComponent，closure，object等）
+
+
+4. 精确定位，借助 Memory 面板的` Heap Snapshot`
+
+   + `Heap Snapshot`生成堆快照，点击前都要手动垃圾回收
+   + 进行一些内存泄露的可以操作后，再生成堆快照，通过`Comparsion`对比快照的差异，如果发现 `closure闭包` 是内存增长的大头
+   + 在点一次垃圾回收并继续记录堆快照，再对比，发现这个时候内存释放的却很少，就可以展开定位了
+
+5. 精确定位，借助 Memory 面板的`Allocation Instrumentation on Timeline`
+
+   + 可以随时间线查看堆内存的分配情况
+
+   + 每个柱条的高度对应最近分配的对象的大小，柱条的颜色表示这些对象是否仍然在最后的堆快照中。蓝色条表示在时间轴结束时仍然存活的对象，灰色条表示在时间轴期间分配但已经被垃圾回收的对象。
+
+     ![image-20230830225453334](C:\Users\MSK\AppData\Roaming\Typora\typora-user-images\image-20230830225453334.png)
 
 ##### performance monitor 工具
 

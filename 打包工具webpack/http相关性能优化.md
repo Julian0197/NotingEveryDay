@@ -53,6 +53,8 @@
 <script type="module">import { a } from './a.js'</script>
 ~~~
 
+4. 用不到的script标签最好放在html最底部，这样可以避免阻塞html解析
+
 ### 预加载静态资源 link标签+preload属性
 
 preload 一般是预加载当前页面要用到的图片、字体、js 脚本、css 文件等静态资源文件。**先加载这些静态资源，并推迟到要使用再执行。**
@@ -101,6 +103,28 @@ prefetch 一般是预加载非当前页面的资源，prefetch 是一个**低优
 ~~~js
 <link rel="prefetch" href="/uploads/images/pic.png">
 ~~~
+
+##### dns-preconnect预解析
+
+例如：`<link rel="preconnect" href="https://code.jquery.com" as="script">`
+
++ 提前 DNS查询，TLS协商，tcp握手
++ 对当前域名的资源无效（因为已经有缓存了），一般对cdn或其他域的资源 有效
+
+场景：页脚有个cdn资源`<script>`，则可以在页眉可以放一个`preconnect`资源提示
+
+```html
+<head>
+  <meta charset="utf-8">
+  <title>preconnect example</title>
+  
+  <link rel="preconnect" href="https://code.jquery.com/jquery-3.6.0.min.js" as="script">
+</head>
+
+<body>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</body>
+```
 
 ### 懒加载
 
