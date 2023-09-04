@@ -193,17 +193,41 @@ diff算法在处理Fragments时，Renderer API会单独处理将Fragments中的�
 
 通过编译时优化，Vue3能够在构建时对模板进行静态分析和优化，减少了运行时的开销，提高了渲染性能。这使得Vue3在性能方面有了显著的提升，特别是在大型应用中或需要频繁更新的场景下，能够更好地发挥其优势。
 
-### patchFlag
+### patchFlag和静态提升
 
-模板编译器会对模板进行静态分析，以识别出**静态节点**，并为这些节点添加 `patchFlag`。`patchFlag` 是一个标志位，用于**告诉运行时渲染器如何处理该节点**，以提高渲染性能。
++ 模板编译器会对模板进行静态分析，以识别出**静态节点**
++ `patchFlag` 是一个标志位，用于**告诉运行时渲染器如何处理该节点**，以提高渲染性能。
 
-patchFlag 的值是一个 32 位的二进制表示，每一位代表一个特定的操作或标识。以下是 Patch Flag 的一些常用标识：
+patchFlag 的值是一个 32 位的二进制表示，每一位代表一个特定的操作或标识。
 
-+ `0b000001`：PROPS，表示该节点有**动态属性**，需要使用动态绑定更新。
-+ `0b000010`：CLASS，表示该节点有**动态 class**，需要使用动态绑定更新。
-+ `0b000100`：STYLE，表示该节点有**动态 style**，需要使用动态绑定更新。
-+ `0b001000`：HYDRATE_EVENTS，表示该节点有**事件监听器**，需要进行事件处理。
-+ `0b010000`：NEED_PATCH，表示该节点需要进行进一步的 **patch** 操作。
-+ `0b100000`：DYNAMIC_SLOTS，表示该节点有**动态插槽**内容。
+```js
+export const enum PatchFlags {
+  TEXT = 1,// 动态的文本节点
+  CLASS = 1 << 1,  // 2 动态的 class
+  STYLE = 1 << 2,  // 4 动态的 style
+  PROPS = 1 << 3,  // 8 动态属性，不包括类名和样式
+  FULL_PROPS = 1 << 4,  // 16 动态 key，当 key 变化时需要完整的 diff 算法做比较
+  HYDRATE_EVENTS = 1 << 5,  // 32 表示带有事件监听器的节点
+  STABLE_FRAGMENT = 1 << 6,   // 64 一个不会改变子节点顺序的 Fragment
+  KEYED_FRAGMENT = 1 << 7, // 128 带有 key 属性的 Fragment
+  UNKEYED_FRAGMENT = 1 << 8, // 256 子节点没有 key 的 Fragment
+  NEED_PATCH = 1 << 9,   // 512
+  DYNAMIC_SLOTS = 1 << 10,  // 动态 solt
+  HOISTED = -1,  // 特殊标志是负整数表示永远不会用作 diff
+  BAIL = -2 // 一个特殊的标志，指代差异算法
+}
 
-`Patch Flag`在编译时确定，渲染器在进行 diff 算法时遇到静态节点时，会根据其 Patch Flag 进行快速判断，从而避免对静态节点进行不必要的比较和更新操作。这样可以减少运行时的开销，提高渲染性能。
+```
+
+静态提升后不会放在render函数内，只会被创建一次，在渲染时直接复用，不会参与diff算法。
+
+```js
+const _hoisted_1 = /*#__PURE__*/_createVNode("span", null, "你好", -1 /* HOISTED */)
+
+export function render(_ctx, _cache, $props, $setup, $data, $options) {
+  return (_openBlock(), _createBlock(_Fragment, null, [
+    _hoisted_1,
+    _createVNode("div", null, _toDisplayString(_ctx.message), 1 /* TEXT */)
+  ], 64 /* STABLE_FRAGMENT */))
+}
+```
