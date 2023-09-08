@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div class="cointainer">
+      <div class="img-list">
+        <div class="img-item"></div>
+        <div class="img-item"></div>
+        <div class="img-item"></div>
+      </div>
+      <div class="arrow-left"></div>
+      <div class="arrow-right"></div>
+      <div class="indicators">
+        <span class="active"></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  </body>
+  <script>
+    const imgList = document.querySelector(".img-list");
+    const arrowLeft = document.querySelector(".arrow-left");
+    const arrowRight = document.querySelector(".arrow-right");
+    const indicators = document.querySelector(".indicators");
+
+    function init() {
+      // 复制第一张图片到最后
+      const firstImg = imgList.firstElementChild.cloneNode(true);
+      // 复制最后一张图片到最前
+      const lastImg = imgList.lastElementChild.cloneNode(true);
+      // 将复制的图片添加到imgList中
+      imgList.appendChild(firstImg);
+      imgList.insertBefore(lastImg, imgList.firstElementChild);
+      // 设置最后一张图片绝对定位
+      lastImg.style.position = "absolute";
+      lastImg.style.transform = "translateX(-100%)";
+    }
+
+    init();
+
+    let curIndex = 0; // 当前显示的图片索引
+    const count = indicators.length; // 图片总数
+
+    // 指定跳转到第几张图片
+    function moveTo(index) {
+      // 相对视口向左边移动index * 100%的距离
+      imgList.style.tansform = `translateX(-${index * 100}%)`;
+      // 将当前img对应的indicator的active去掉
+      const activeIndicator = document.querySelector(".indicators .active");
+      activeIndicator.classList.remove("active");
+      // 选中当前img对应的indicator
+      indicators[index].classList.add("active");
+      curIndex = index;
+    }
+
+    // 往左边移动一张图片
+    function leftNext() {
+      // 判断是否是第一张图片
+      if (curIndex === 0) {
+        imgList.style.tansform = "translateX(-100%)";
+        imgList.style.transition = "none";
+        // 强制浏览器渲染，触发回流
+        imgList.getBoundingClientRect();
+        moveTo(count - 1);
+      } else {
+        moveTo(curIndex - 1);
+      }
+    }
+
+    // 往右边移动一张图片
+    function rightNext() {
+      // 判断是否是最后一张图片
+      if (curIndex === count - 1) {
+        imgList.style.tansform = "translateX(100%)";
+        imgList.style.transition = "none";
+        // 强制浏览器渲染，触发回流
+        imgList.getBoundingClientRect();
+        moveTo(0);
+      } else {
+        moveTo(curIndex + 1);
+      }
+    }
+
+    // 每个indicator绑定点击事件
+    indicators.forEach((item, i) => {
+      item.onClikc = () => {
+        moveTo(i);
+      };
+    });
+
+    arrowLeft.onClick = () => {
+      leftNext();
+    };
+    arrowRight.onClick = () => {
+      rightNext();
+    };
+  </script>
+  <style>
+    /* 元素设置flex布局，让子元素水平排 */
+    /* 再设置overflow:hidden，这样就可以实现轮播图的效果 */
+    /* 设置transform切换有一个过渡效果 tansition: 0.5s */
+  </style>
+</html>
