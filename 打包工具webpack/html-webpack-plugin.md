@@ -31,7 +31,7 @@ module.exports={
 #### html-webpack-plugin
 html-webpack-plugin 会在打包结束后，创建一个 html 文件，并把打包后的静态资源自动插入到这个 html 文件中。默认会在 output.path 的路径下创建 index.html 文件，也可以通过 filename 指定输出的文件名；并在这个文件插入一个 script 标签，标签的 src 为 output.filename，来引用打包后的 JS 文件。
 
-wepack构建流程：
+##### wepack构建流程：
 1. 根据配置文件和shell命令，初始化参数，得到最终的配置对象
 2. 根据配置对象，初始化compiler对象
 3. 注册所有配置的插件，new Plugin()，并调用apply方法，传入compiler

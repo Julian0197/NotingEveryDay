@@ -1,7 +1,7 @@
 /**
  * 
  * @param {number} poolLimit 最大并发数
- * @param {Array} array 参数数组
+ * @param {Array} array 请求数组
  * @param {function} iteratorFn 每个 promise 中执行的异步操作。
  * @returns 
  */
